@@ -56,7 +56,7 @@ int process_wav_files(const char* folder, uint64_t hca_key) {
 
     while ((entry = readdir(dir)) != NULL) {
         const char* ext = get_file_extension(entry->d_name);
-        if (ext != NULL && strcmp(ext, "wav") == 0) {
+        if (ext != NULL && strcasecmp(ext, "wav") == 0) {
             has_files = 1;
             // Construct full paths
             snprintf(wav_path, sizeof(wav_path), "%s\\%s", folder, entry->d_name);
@@ -108,7 +108,6 @@ int process_hca_files(const char* folder) {
     // Write batch file header
     fprintf(batch_file, "@echo off\n");
     fprintf(batch_file, "echo Starting HCA to WAV conversion...\n");
-    fprintf(batch_file, "setlocal EnableDelayedExpansion\n");  // Enable delayed expansion for error level checking
 
     struct dirent* entry;
     char hca_path[MAX_PATH];
@@ -117,7 +116,7 @@ int process_hca_files(const char* folder) {
 
     while ((entry = readdir(dir)) != NULL) {
         const char* ext = get_file_extension(entry->d_name);
-        if (ext != NULL && strcmp(ext, "hca") == 0 && strcmp(entry->d_name, "00000.hca") != 0) {
+        if (ext != NULL && strcasecmp(ext, "hca") == 0 && strcmp(entry->d_name, "00000.hca") != 0) {
             has_files = 1;
             // Construct full paths
             snprintf(hca_path, sizeof(hca_path), "%s\\%s", folder, entry->d_name);
@@ -129,7 +128,7 @@ int process_hca_files(const char* folder) {
             fprintf(batch_file, "\"%s\" -i \"%s\" -o \"%s\"\n", vgmstream_path, hca_path, wav_path);
 
             // Check if conversion was successful and delete HCA if it was
-            fprintf(batch_file, "if !errorlevel! equ 0 (\n");
+            fprintf(batch_file, "if %%errorlevel%% equ 0 (\n");
             fprintf(batch_file, "    echo Conversion successful - deleting %s.hca\n", basename);
             fprintf(batch_file, "    del \"%s\"\n", hca_path);
             fprintf(batch_file, ") else (\n");

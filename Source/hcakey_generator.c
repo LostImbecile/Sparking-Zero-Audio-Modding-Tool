@@ -67,7 +67,6 @@ const char* find_key(const char* filename)
         strncpy(csv_filename, keyEntries[i].filename, MAX_FILENAME - 1);
         csv_filename[MAX_FILENAME - 1] = '\0';
 
-        // Use strstr instead of strcmp to check if csv_filename is contained within base_filename
         if (strstr(base_filename, csv_filename) != NULL)
         {
             return keyEntries[i].key;

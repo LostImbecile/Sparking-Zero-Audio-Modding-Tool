@@ -26,11 +26,11 @@ int process_input(const char* input) {
 		printf("Warning: This tool may not handle this file correctly.\n\n");
 	}
 
-	if (strcmp(ext, "acb") == 0) {
+	if (strcasecmp(ext, "acb") == 0) {
 		return process_acb_file(input);
-	} else if (strcmp(ext, "uasset") == 0) {
+	} else if (strcasecmp(ext, "uasset") == 0) {
 		return process_uasset_file(input);
-	} else if (strcmp(ext, "awb") == 0) {
+	} else if (strcasecmp(ext, "awb") == 0) {
 		return process_awb_file(input);
 	} else {
 		printf("Unsupported file type: %s\n", ext);
