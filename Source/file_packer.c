@@ -7,6 +7,28 @@
 #include "utils.h"
 #include <stdio.h>
 
+static bool folder_processed = false;
+
+bool was_folder_processed(void) {
+	return folder_processed;
+}
+
+static int rename_temp_folder(const char* temp_name, const char* mod_name) {
+    char old_path[MAX_PATH];
+    char new_path[MAX_PATH];
+
+    // Build the full paths using program directory
+    snprintf(old_path, MAX_PATH, "%s%s", program_directory, temp_name);
+    snprintf(new_path, MAX_PATH, "%s%s", program_directory, mod_name);
+
+    if (rename(old_path, new_path) != 0) {
+        printf("Error: Failed to rename %s to %s\n", temp_name, mod_name);
+        return -1;
+    }
+
+    return 0;
+}
+
 int pack_files(const char* foldername) {
 	printf("Packaging files from folder: %s\n",
 	       extract_name_from_path(foldername));
@@ -47,31 +69,78 @@ int pack_files(const char* foldername) {
 	char uasset_path[MAX_PATH];
 	build_uasset_path(foldername, uasset_path, sizeof(uasset_path));
 
-	char mod_name[MAX_PATH] = "Mod_P";
-	printf("\nEnter mod name ('_P' recommended to suffix) or press Enter for default 'Mod_P': ");
-	char input[MAX_PATH];
-	if (fgets(input, sizeof(input), stdin)) {
-		input[strcspn(input, "\n")] = 0;
-		if (strlen(input) > 0) {
-			strncpy(mod_name, input, MAX_PATH - 1);
+	if (config.Create_Separate_Mods) {
+
+
+		const char* mod_name = get_mod_name();
+
+		// Generate utoc & ucas in mods folder
+		if (utoc_generate(uasset_path, mod_name) != 0) {
+			free(parent_dir);
+			return -1;
 		}
-	}
 
-	// Generate utoc & ucas in mods folder
-	if (utoc_generate(uasset_path, mod_name) != 0) {
-		free(parent_dir);
-		return -1;
-	}
+		printf("\n");
 
-	printf("\n");
-
-	// Generate and replace Pak
-	if (pak_generate(replace_extension(uasset_path, "awb"), mod_name) != 0) {
-		free(parent_dir);
-		return -1;
+		// Generate and replace Pak
+		if (pak_generate(replace_extension(uasset_path, "awb"), mod_name) != 0) {
+			free(parent_dir);
+			return -1;
+		}
+	} else {
+		if (utoc_create_structure(uasset_path, "temp_utoc") != 0) {
+			free(parent_dir);
+			return -1;
+		}
+		if (pak_create_structure(replace_extension(uasset_path, "awb"), "temp_pak")) {
+			free(parent_dir);
+			return -1;
+		}
+		folder_processed = true;
 	}
 
 	free(parent_dir);
+	return 0;
+}
+
+const char* get_mod_name() {
+	static char mod_name[MAX_PATH] =
+	    "Mod_P";  // static to ensure persistence after function exits
+	char input[MAX_PATH];
+
+	printf("\nEnter mod name ('_P' recommended to suffix) or press Enter for default 'Mod_P': ");
+	if (fgets(input, sizeof(input), stdin)) {
+		input[strcspn(input, "\n")] = 0;  // Remove the newline character
+		if (strlen(input) > 0) {
+			strncpy(mod_name, input, MAX_PATH - 1);
+			mod_name[MAX_PATH - 1] = '\0';  // Ensure null termination
+		}
+	}
+
+	return mod_name;
+}
+
+int package_combined_mod(const char* mod_name) {
+	// First rename temp_utoc to mod_name
+    if (rename_temp_folder("temp_utoc", mod_name) != 0) {
+        return -1;
+    }
+
+    // Process the renamed utoc folder
+    if (utoc_package_and_cleanup(mod_name) != 0) {
+        return -1;
+    }
+
+    // Then rename temp_pak to mod_name
+    if (rename_temp_folder("temp_pak", mod_name) != 0) {
+        return -1;
+    }
+
+    // Process the renamed pak folder
+    if (pak_package_and_cleanup(mod_name) != 0) {
+        return -1;
+    }
+
 	return 0;
 }
 

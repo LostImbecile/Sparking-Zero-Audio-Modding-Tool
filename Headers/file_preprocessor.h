@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FILE_PREPROCESSOR_H
 #define FILE_PREPROCESSOR_H
 #include <stdbool.h>

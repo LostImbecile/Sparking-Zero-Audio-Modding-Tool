@@ -1,8 +1,49 @@
 #include "initialization.h"
 #include "file_processor.h"
 #include "file_preprocessor.h"
+#include "file_packer.h"
 #include "utils.h"
 #include <stdio.h>
+
+extern Config config;
+
+int process_and_package_folders(char** filtered_argv, int argc) {
+    // First process all folders
+    for (int i = 1; i < argc; i++) {
+        if (is_directory(filtered_argv[i])) {
+            if (process_input(filtered_argv[i]) != 0) {
+                printf("Error processing folder: %s\n",
+                       extract_name_from_path(filtered_argv[i]));
+            }
+            printf("\n");
+        }
+    }
+
+    // If folders were processed and we're creating a combined mod, handle packaging
+    if (was_folder_processed() && !config.Create_Separate_Mods) {
+        // Package all processed folders into one mod
+        const char* mod_name = get_mod_name();
+        if (package_combined_mod(mod_name) != 0) {
+            printf("Error creating combined mod package\n");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int process_files(char** filtered_argv, int argc) {
+    // Process individual files
+    for (int i = 1; i < argc; i++) {
+        if (!is_directory(filtered_argv[i])) {
+            if (process_input(filtered_argv[i]) != 0) {
+                printf("Error processing file: %s\n",
+                       extract_name_from_path(filtered_argv[i]));
+            }
+            printf("\n");
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
@@ -29,13 +70,8 @@ int main(int argc, char* argv[]) {
 
 	// Process arguments
 	char** filtered_argv = preprocess_argv(&argc, argv);
-	for (int i = 1; i < argc; i++) {
-		if (process_input(filtered_argv[i]) != 0) {
-			printf("Error processing input: %s\n",
-			       extract_name_from_path(filtered_argv[i]));
-		}
-		printf("\n");
-	}
+	process_files(filtered_argv, argc);
+	process_and_package_folders(filtered_argv, argc);
 
 	// Clean up
 	free_filtered_argv(filtered_argv);

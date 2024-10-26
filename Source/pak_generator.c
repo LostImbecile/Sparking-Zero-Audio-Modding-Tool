@@ -38,62 +38,74 @@ static int move_to_mods_folder(const char* source_path, const char* mod_name,
 	return 0;
 }
 
+int pak_create_structure(const char* file_path, const char* mod_name) {
+    char full_path[MAX_PATH];
+    char mod_folder[MAX_PATH];
+
+    snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
+
+    // Create the CriWareData directory path
+    snprintf(full_path, MAX_PATH, "%s%s\\SparkingZERO\\Content\\CriWareData",
+             program_directory, mod_name);
+
+    printf("Creating directory structure: %s\n", strstr(full_path, "SparkingZERO\\Content"));
+
+    // Create directory structure
+    if (create_directory_recursive(full_path) != 0) {
+        return 1;
+    }
+
+    // Copy the input file to the mod directory
+    char dest_path[MAX_PATH];
+    snprintf(dest_path, MAX_PATH, "%s\\%s", full_path, extract_name_from_path(file_path));
+    if (copy_file(file_path, dest_path) != 0) {
+        printf("Failed to copy AWB file\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+int pak_package_and_cleanup(const char* mod_name) {
+    char cmd[1024];
+    char pak_path[MAX_PATH];
+    char mod_folder[MAX_PATH];
+    snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
+
+    // Create pak path
+    snprintf(pak_path, MAX_PATH, "%s\\%s.pak", program_directory, mod_name);
+
+    // Create unrealpak command
+    snprintf(cmd, sizeof(cmd),
+             "start \"\" /wait cmd /C \"\"%s\" \"%s%s\" -compress && exit\"",
+             unrealpak_path, program_directory, mod_name);
+
+    // Execute the command
+    int result = system(cmd);
+    if (result != 0) {
+        printf("Failed to generate PAK.\n");
+        cleanup(mod_folder);
+        getchar();
+        return 1;
+    }
+
+    // Move the generated PAK file to mods folder
+    if (move_to_mods_folder(pak_path, mod_name, config.Game_Directory) != 0) {
+        printf("Failed to move generated PAK to mods folder. Please do so manually.\n");
+        cleanup(mod_folder);
+        getchar();
+        return 1;
+    }
+
+    cleanup(mod_folder);
+    printf("PAK generation successful.\n");
+    return 0;
+}
+
 int pak_generate(const char* file_path, const char* mod_name) {
-	char full_path[MAX_PATH];
-	char mod_folder[MAX_PATH];
-	char cmd[1024];
-	char pak_path[MAX_PATH];
+    if (pak_create_structure(file_path, mod_name) != 0) {
+        return 1;
+    }
 
-	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
-
-	// Create the CriWareData directory path
-	snprintf(full_path, MAX_PATH, "%s%s\\SparkingZERO\\Content\\CriWareData",
-	         program_directory, mod_name);
-
-	printf("Creating directory structure: %s\n", strstr(full_path,
-	        "SparkingZERO\\Content"));
-
-	// Create directory structure
-	if (create_directory_recursive(full_path) != 0) {
-		return 1;
-	}
-
-	// Copy the input file to the mod directory
-	char dest_path[MAX_PATH];
-	snprintf(dest_path, MAX_PATH, "%s\\%s", full_path,
-	         extract_name_from_path(file_path));
-	if (copy_file(file_path, dest_path) != 0) {
-		printf("Failed to copy AWB file\n");
-		cleanup(mod_folder);
-		return 1;
-	}
-
-	// Create pak path
-	snprintf(pak_path, MAX_PATH, "%s\\%s.pak", program_directory, mod_name);
-
-	// Create unrealpak command
-	snprintf(cmd, sizeof(cmd),
-	         "start \"\" /wait cmd /C \"\"%s\" \"%s%s\" -compress && exit\"",
-	         unrealpak_path, program_directory, mod_name);
-
-	// Execute the command
-	int result = system(cmd);
-	if (result != 0) {
-		printf("Failed to generate PAK.\n");
-		cleanup(mod_folder);
-		getchar();
-		return 1;
-	}
-
-	// Move the generated PAK file to mods folder
-	if (move_to_mods_folder(pak_path, mod_name, config.Game_Directory) != 0) {
-		printf("Failed to move generated PAK to mods folder. Please do so manually.\n");
-		cleanup(mod_folder);
-		getchar();
-		return 1;
-	}
-
-	cleanup(mod_folder);
-	printf("PAK generation successful.\n");
-	return 0;
+    return pak_package_and_cleanup(mod_name);
 }

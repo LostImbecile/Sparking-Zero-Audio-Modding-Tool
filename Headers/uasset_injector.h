@@ -1,3 +1,4 @@
+#pragma once
 #ifndef UASSET_INJECTOR_H
 #define UASSET_INJECTOR_H
 

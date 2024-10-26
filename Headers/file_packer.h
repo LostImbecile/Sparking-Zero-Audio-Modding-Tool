@@ -1,10 +1,19 @@
+#pragma once
 #ifndef FILE_PACKER_H
 #define FILE_PACKER_H
 
 #include <stdbool.h>
+#include "config.h"
 
 extern char acb_editor_path[];
+extern Config config;
+extern char program_directory[];
 
+bool was_folder_processed(void);
+
+const char* get_mod_name();
+
+int package_combined_mod(const char* mod_name);
 
 /**
  * @brief Packs files from a specified folder using ACBEditor

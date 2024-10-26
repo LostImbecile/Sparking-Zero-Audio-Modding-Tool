@@ -7,12 +7,17 @@
 "# Configuration file for the application\n\n" \
 "# If true, turns all hcas into wavs on extraction and converts them back on packaging. Note: operations will take longer.\n" \
 "Convert_HCA_Into_WAV=false\n\n" \
+"# If false, all processed sound folders will be combined into a single mod package.\n" \
+"# Use true to create separate mods for each folder.\n" \
+"# Use false to combine all folders into one mod.\n" \
+"Create_Separate_Mods=true\n\n" \
 "# Game directory to move the output paks into\n" \
 "Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n"
 
 // Initialize config with default values
 void config_init(Config* config) {
     config->Convert_HCA_Into_WAV = false;
+    config->Create_Separate_Mods = true;  // Default to separate mods for backward compatibility
     strcpy(config->Game_Directory,
            "C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks");
 }
@@ -51,6 +56,9 @@ static void parse_line(Config* config, char* line) {
 
     if (strcmp(key_lower, "convert_hca_into_wav") == 0) {
         config->Convert_HCA_Into_WAV = (_stricmp(value, "true") == 0);
+    }
+    else if (strcmp(key_lower, "create_separate_mods") == 0) {
+        config->Create_Separate_Mods = (_stricmp(value, "true") == 0);
     }
     else if (strcmp(key_lower, "game_directory") == 0) {
         strcpy(config->Game_Directory, value);

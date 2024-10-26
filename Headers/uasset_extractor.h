@@ -1,3 +1,4 @@
+#pragma once
 #ifndef UASSET_EXTRACTOR_H
 #define UASSET_EXTRACTOR_H
 

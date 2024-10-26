@@ -1,3 +1,4 @@
+#pragma once
 #ifndef HCAKEY_GENERATOR_H
 #define HCAKEY_GENERATOR_H
 

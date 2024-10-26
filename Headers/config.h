@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -8,6 +9,7 @@
 
 typedef struct {
     bool Convert_HCA_Into_WAV;
+    bool Create_Separate_Mods;
     char Game_Directory[MAX_PATH];
 } Config;
 

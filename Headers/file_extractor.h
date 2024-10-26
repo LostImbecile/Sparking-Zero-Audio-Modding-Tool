@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FILE_EXTRACTOR_H
 #define FILE_EXTRACTOR_H
 
