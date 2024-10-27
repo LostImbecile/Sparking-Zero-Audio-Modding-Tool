@@ -10,6 +10,7 @@
 typedef struct {
     bool Convert_HCA_Into_WAV;
     bool Create_Separate_Mods;
+    bool Generate_Paks_And_Utocs;
     char Game_Directory[MAX_PATH];
 } Config;
 

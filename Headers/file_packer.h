@@ -11,6 +11,8 @@ extern char program_directory[];
 
 bool was_folder_processed(void);
 
+int generate_mod_packages(const char* foldername);
+
 const char* get_mod_name();
 
 int package_combined_mod(const char* mod_name);

@@ -66,17 +66,24 @@ int pack_files(const char* foldername) {
 		return -1;
 	}
 
-	char uasset_path[MAX_PATH];
+	if(config.Generate_Paks_And_Utocs && generate_mod_packages(foldername) != 0){
+        free(parent_dir);
+        return -1;
+	}
+
+	free(parent_dir);
+	return 0;
+}
+
+int generate_mod_packages(const char* foldername){
+    char uasset_path[MAX_PATH];
 	build_uasset_path(foldername, uasset_path, sizeof(uasset_path));
 
 	if (config.Create_Separate_Mods) {
-
-
 		const char* mod_name = get_mod_name();
 
 		// Generate utoc & ucas in mods folder
 		if (utoc_generate(uasset_path, mod_name) != 0) {
-			free(parent_dir);
 			return -1;
 		}
 
@@ -84,22 +91,18 @@ int pack_files(const char* foldername) {
 
 		// Generate and replace Pak
 		if (pak_generate(replace_extension(uasset_path, "awb"), mod_name) != 0) {
-			free(parent_dir);
 			return -1;
 		}
 	} else {
 		if (utoc_create_structure(uasset_path, "temp_utoc") != 0) {
-			free(parent_dir);
 			return -1;
 		}
 		if (pak_create_structure(replace_extension(uasset_path, "awb"), "temp_pak")) {
-			free(parent_dir);
 			return -1;
 		}
 		folder_processed = true;
 	}
 
-	free(parent_dir);
 	return 0;
 }
 
