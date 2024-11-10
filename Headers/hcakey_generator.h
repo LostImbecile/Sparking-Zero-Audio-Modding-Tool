@@ -23,5 +23,6 @@ const char* find_key(const char* filename);
 void write_binary_key(const char* key, const char* folder);
 char* get_directory(const char* path);
 void generate_hcakey(const char* filepath);
+void generate_hcakey_dir(const char* filepath, const char* directory);
 
 #endif // HCAKEY_GENERATOR_H

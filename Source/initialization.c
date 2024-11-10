@@ -12,6 +12,7 @@ char acb_editor_path[MAX_PATH] = {0};
 char unrealrezen_path[MAX_PATH] = {0};
 char unrealpak_path[MAX_PATH] = {0};
 char vgmstream_path[MAX_PATH] = {0};
+char bgm_tool_path[MAX_PATH] = {0};
 int csv_loaded = 0;
 Config config;
 
@@ -25,6 +26,7 @@ static int initialize_tool_paths(void) {
     snprintf(vgmstream_path, MAX_PATH, "%svgmstream-cli\\vgmstream-cli.exe", tools_path);
     snprintf(unrealrezen_path, MAX_PATH, "%sUnrealReZen\\UnrealReZen.exe", tools_path);
     snprintf(unrealpak_path, MAX_PATH, "%sUnrealPak\\UnrealPak-With-Compression.bat", tools_path);
+    snprintf(bgm_tool_path, MAX_PATH, "%sBgmModdingTool.exe", tools_path);
 
     // Verify required executables exist
     FILE* vgaudio_test = fopen(vgaudio_cli_path, "r");
@@ -40,6 +42,12 @@ static int initialize_tool_paths(void) {
         return 1;
     }
     fclose(acbeditor_test);
+
+    FILE* bgmtool_test = fopen(bgm_tool_path, "r");
+    if (!bgmtool_test) {
+        fprintf(stderr, "Error: BgmModdingTool.exe not found in Tools directory\n");
+    }
+    fclose(bgmtool_test);
 
     return 0;
 }

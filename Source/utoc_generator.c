@@ -62,99 +62,124 @@ static void to_lower(char* str) {
 }
 
 int utoc_generate(const char* file_path, const char* mod_name) {
-    if (utoc_create_structure(file_path, mod_name) != 0) {
-        return 1;
-    }
+	if (utoc_create_structure(file_path, mod_name) != 0) {
+		return 1;
+	}
 
-    return utoc_package_and_cleanup(mod_name);
+	return utoc_package_and_cleanup(mod_name);
 }
 
 int utoc_create_structure(const char* file_path, const char* mod_name) {
-    char full_path[MAX_PATH];
-    char mods_folder[MAX_PATH];
-    char mod_folder[MAX_PATH];
+	char full_path[MAX_PATH];
+	char mods_folder[MAX_PATH];
+	char mod_folder[MAX_PATH];
 
-    // Check for existing files before proceeding
-    if (check_existing_files(config.Game_Directory, mod_name) != 0) {
-        return 1;
-    }
+	// Check for existing files before proceeding
+	if (check_existing_files(config.Game_Directory, mod_name) != 0) {
+		return 1;
+	}
 
-    snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
+	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
 
-    const char* subfolder = "";
-    char lowercase_filename[MAX_PATH];
-    strncpy(lowercase_filename, extract_name_from_path(file_path), MAX_PATH);
-    to_lower(lowercase_filename);
+	const char* subfolder = "";
+	char lowercase_filename[MAX_PATH];
+	strncpy(lowercase_filename, extract_name_from_path(file_path), MAX_PATH);
+	to_lower(lowercase_filename);
 
-    // Determine subfolder based on filename
-    if (strstr(lowercase_filename, "bgm")) {
-        printf("BGM files are not supported.\n");
-        return 1;
-    } else if (strstr(lowercase_filename, "btlcv")) {
-        subfolder = strstr(lowercase_filename, "_jp") ? "\\Battle_VOICE\\JP" : "\\Battle_VOICE\\US";
-    } else if (strstr(lowercase_filename, "btlse") || strstr(lowercase_filename, "se_battle"))
-        subfolder = "\\Battle_SE";
-    else if (strstr(lowercase_filename, "advif_cv"))
-        subfolder = "\\ADV_VOICE\\_AtomCueSheet";
-    else if (strstr(lowercase_filename, "se_advif"))
-        subfolder = "\\ADV_SE\\_AtomCueSheet";
-    else if (strstr(lowercase_filename, "voice_gallery"))
-        subfolder = "\\GALLARY_VOICE";
-    else if (strstr(lowercase_filename, "se_ui"))
-        subfolder = "\\UI_SE";
-    else if (strstr(lowercase_filename, "shop_item"))
-        subfolder = "\\SHOP_ITEM";
+	// Determine subfolder based on filename
+	if (strstr(lowercase_filename, "bgm")
+	        && strstr(lowercase_filename, "dlc") == NULL) {
+	            subfolder = "\\BGM";
+	}else if (strstr(lowercase_filename, "btlcv")) {
+		subfolder = strstr(lowercase_filename,
+		                   "_jp") ? "\\Battle_VOICE\\JP" : "\\Battle_VOICE\\US";
+	} else if (strstr(lowercase_filename, "btlse")
+	           || strstr(lowercase_filename, "se_battle"))
+		subfolder = "\\Battle_SE";
+	else if (strstr(lowercase_filename, "advif_cv"))
+		subfolder = "\\ADV_VOICE\\_AtomCueSheet";
+	else if (strstr(lowercase_filename, "se_advif"))
+		subfolder = "\\ADV_SE\\_AtomCueSheet";
+	else if (strstr(lowercase_filename, "voice_gallery"))
+		subfolder = "\\GALLARY_VOICE";
+	else if (strstr(lowercase_filename, "se_ui"))
+		subfolder = "\\UI_SE";
+	else if (strstr(lowercase_filename, "shop_item"))
+		subfolder = "\\SHOP_ITEM";
 
-    // Create full directory path
-    snprintf(full_path, MAX_PATH, "%s%s\\SparkingZERO\\Content\\SS\\Sounds%s",
-             program_directory, mod_name, subfolder);
-    printf("Creating directory structure: %s\n", strstr(full_path, "SparkingZERO\\Content"));
+	// Create full directory path
+	if (strstr(lowercase_filename, "dlc_01")) {
+		snprintf(full_path, MAX_PATH,
+		         "%s%s\\SparkingZERO\\Plugins\\DLC_AnimeSongsBGMPack1\\Content",
+		         program_directory, mod_name);
+		printf("Creating directory structure: %s\n", strstr(full_path,
+		        "SparkingZERO\\Plugins"));
+	} else if (strstr(lowercase_filename, "dlc_02")) {
+		snprintf(full_path, MAX_PATH,
+		         "%s%s\\SparkingZERO\\Plugins\\DLC_AnimeSongsBGMPack2\\Content",
+		         program_directory, mod_name);
+		printf("Creating directory structure: %s\n", strstr(full_path,
+		        "SparkingZERO\\Plugins"));
+	} else {
+		snprintf(full_path, MAX_PATH, "%s%s\\SparkingZERO\\Content\\SS\\Sounds%s",
+		         program_directory, mod_name, subfolder);
+		printf("Creating directory structure: %s\n", strstr(full_path,
+		        "SparkingZERO\\Content"));
+	}
 
-    // Create directories
-    if (create_directory_recursive(full_path) != 0) {
-        return 1;
-    }
 
-    // Create mods folder
-    snprintf(mods_folder, MAX_PATH, "%s\\~mods", config.Game_Directory);
-    if (create_directory(mods_folder) != 0) {
-        printf("Failed to create mods folder: %s\n", mods_folder);
-        return 1;
-    }
+	// Create directories
+	if (create_directory_recursive(full_path) != 0) {
+		return 1;
+	}
 
-    // Copy the file
-    char dest_path[MAX_PATH];
-    snprintf(dest_path, MAX_PATH, "%s\\%s", full_path, extract_name_from_path(file_path));
-    if (copy_file(file_path, dest_path) != 0) {
-        printf("Failed to copy .uasset file\n");
-        return 1;
-    }
+	// Create mods folder
+	snprintf(mods_folder, MAX_PATH, "%s\\~mods", config.Game_Directory);
+	if (create_directory(mods_folder) != 0) {
+		printf("Failed to create mods folder: %s\n", mods_folder);
+		return 1;
+	}
 
-    return 0;
+	// Copy the file
+	char dest_path[MAX_PATH];
+	snprintf(dest_path, MAX_PATH, "%s\\%s", full_path,
+	         extract_name_from_path(file_path));
+	if (copy_file(file_path, dest_path) != 0) {
+		printf("Failed to copy .uasset file\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 int utoc_package_and_cleanup(const char* mod_name) {
-    char cmd[1024];
-    char mod_folder[MAX_PATH];
-    snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
+	char cmd[2 * MAX_PATH];
+	char mod_folder[MAX_PATH];
+	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
 
-    // Generate UTOC command
-    snprintf(cmd, sizeof(cmd),
-             "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s\\%s\" --compression-format Zlib "
-             "--engine-version GAME_UE5_1 --aes-key "
-             "0xb2407c45ea7c528738a94c0a25ea8f419de4377628eb30c0ae6a80dd9a9f3ef0 "
-             "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && pause && exit\"",
-             unrealrezen_path, program_directory, mod_name,
-             config.Game_Directory, config.Game_Directory, mod_name);
+	char game_dir[MAX_PATH];
+	if (strstr(config.Game_Directory,"Content\\Paks")) {
+		strcpy(game_dir,get_parent_directory(config.Game_Directory));
+	} else
+		strcpy(game_dir,config.Game_Directory);
 
-    int result = system(cmd);
-    if (result != 0) {
-        printf("Failed to generate UTOC.\n");
-        cleanup(mod_folder);
-        return 1;
-    }
+	// Generate UTOC command
+	snprintf(cmd, sizeof(cmd),
+	         "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s\\%s\" --compression-format Zlib "
+	         "--engine-version GAME_UE5_1 --aes-key "
+	         "0xb2407c45ea7c528738a94c0a25ea8f419de4377628eb30c0ae6a80dd9a9f3ef0 "
+	         "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && pause && exit\"",
+	         unrealrezen_path, program_directory, mod_name,
+	         game_dir, config.Game_Directory, mod_name);
 
-    cleanup(mod_folder);
-    printf("UTOC generation successful.\n");
-    return 0;
+	int result = system(cmd);
+	if (result != 0) {
+		printf("Failed to generate UTOC.\n");
+		cleanup(mod_folder);
+		return 1;
+	}
+
+	cleanup(mod_folder);
+	printf("UTOC generation successful.\n");
+	return 0;
 }

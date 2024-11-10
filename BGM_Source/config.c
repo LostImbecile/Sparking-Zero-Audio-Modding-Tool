@@ -16,8 +16,7 @@
 "# Disabling is useful if you want to add non-audio parts to your package.\n" \
 "Generate_Paks_&_Utocs=true\n\n" \
 "# Game directory to move the output paks into\n" \
-"# It should point to your \\Paks folder\n" \
-"Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n\n"
+"Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n"
 
 // Initialize config with default values
 void config_init(Config* config) {

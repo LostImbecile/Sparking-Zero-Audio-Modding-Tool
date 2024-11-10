@@ -46,7 +46,7 @@ int pack_files(const char* foldername) {
 	printf("Extracted HCA key: %" PRIu64 "\n", hca_key);
 
 	// Step 2: Process all WAV files in the folder
-	int conversion_result = process_wav_files(foldername, hca_key);
+	int conversion_result = process_wav_files(foldername, hca_key, 0);
 	if (conversion_result != 0) {
 		printf("Error during WAV to HCA conversion\n");
 		free(parent_dir);

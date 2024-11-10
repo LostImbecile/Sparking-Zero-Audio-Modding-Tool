@@ -4,10 +4,14 @@
 #include "uasset_injector.h"
 #include "file_extractor.h"
 #include "file_packer.h"
+#include "bgm_processor.h"
 #include "utils.h"
 #include <string.h>
 
 int process_input(const char* input) {
+     if (strstr(input, "bgm") || strstr(input, "BGM")) {
+		return process_bgm_input(input);
+	}
 	if (is_directory(input)) {
 		return process_directory(input);
 	}
@@ -16,10 +20,6 @@ int process_input(const char* input) {
 	if (ext == NULL) {
 		printf("Invalid file: %s\n", extract_name_from_path(input));
 		return 1;
-	}
-	if (strstr(input, "bgm_main")) {
-		printf("BGM isn't supported by this tool.\n");
-		return 0;
 	}
 	if (strstr(input, "se_battle") || strstr(input, "se_ui")
 	        || strstr(input, "se_ADVIF")  ) {
