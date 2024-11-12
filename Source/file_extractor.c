@@ -68,6 +68,7 @@ int extract_and_process(const char* input_file) {
 
 	if (config.Convert_HCA_Into_WAV ) {
         printf("Converting HCAs into WAV in different CMD.\n");
+        printf("Remember: you can turn this off in config.ini any time!\n");
 		char folder_path[MAX_PATH];
 		strcpy(folder_path, get_parent_directory(input_file));
 		strcat(folder_path, "\\");

@@ -50,7 +50,9 @@ void recalculate_subsequent_offsets(HCAHeader* headers, int header_count,
 
 long replaceFileContent(FILE* target, FILE* new_hca,
                         HCAHeader* target_headers,
-                        int j, int target_header_count, long file_end_offset) {
+                        int j, int target_header_count, long file_end_offset, int *padding_added) {
+	*padding_added = 0; // Initialize padding to zero
+
 	// Get content boundaries
 	long content_start = target_headers[j].offset;
 	long content_end = (j < target_header_count - 1) ?
@@ -75,7 +77,19 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 	if (total_size < 0 || total_size < content_end) return -1;
 
 	long original_size = content_end - content_start;
-	long size_diff = new_size - original_size;
+
+	// Calculate padding before calculating size difference
+	long padding = 0;
+	if (content_end != file_end_offset && j < target_header_count - 1) {
+		long next_file_offset = content_start + new_size;
+		if (next_file_offset % 16 != 0) {
+			padding = 16 - (next_file_offset % 16);
+			*padding_added = padding;
+		}
+	}
+
+	// Calculate total size difference including padding
+	long size_diff = (new_size + padding) - original_size;
 	long remaining_data = total_size - content_end;
 
 	// Allocate buffer with error handling
@@ -129,7 +143,7 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 					return -1;
 				}
 
-				if (fseek(target, content_start + new_size + pos, SEEK_SET) != 0) {
+				if (fseek(target, content_start + new_size + padding + pos, SEEK_SET) != 0) {
 					free(buffer);
 					return -1;
 				}
@@ -173,6 +187,16 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 		}
 
 		total_written += bytes_read;
+	}
+
+	// Write padding bytes
+	if (padding > 0) {
+		char zero_buffer[16] = {0};
+		if (fwrite(zero_buffer, 1, padding, target) != padding) {
+			free(buffer);
+			return -1;
+		}
+		fflush(target);
 	}
 
 	// Final size verification and adjustment
@@ -236,6 +260,9 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 		snprintf(uasset_header_csv, sizeof(uasset_header_csv),
 		         "%s_uasset_headers.csv", get_basename(uasset_path));
 
+		// Why read and write this each time? Because there are tons of different
+		// AWBs and I want this part to be variable at least, despite the rest of
+		// fixed things, so I can change this in the very far future
 		if (read_header_csv(uasset_header_csv, &uasset_headers,
 		                    &uasset_header_count) != 0) {
 			fclose(uasset);
@@ -305,21 +332,31 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				long original_size = next_offset - target_headers[j].offset;
 
 				// Check if the new file is too large to replace the existing content
-				/*				if (injections[i].index > 81 && new_size > original_size) {
-									fprintf(stderr,
-									        "Error: New HCA file is too large to replace the target area\n");
-									fclose(new_hca);
-									fclose(uasset);
-									fclose(target);
-									continue; // Skip this injection and move to the next
-								}*/
+				if (fixed_size && new_size > original_size) {
+					int thousands = original_size / (1024 * 1000);
+					int remainder = (original_size / 1024) % 1000;
+					if (thousands)
+						fprintf(stderr,
+						        "-> Error: New HCA file is larger than the original %d,%dKB. File skipped.\n\n",
+						        thousands, remainder);
+					else
+						fprintf(stderr,
+						        "-> Error: New HCA file is larger than the original %dKB. File skipped.\n\n",
+						        remainder);
+
+					fclose(new_hca);
+					fclose(uasset);
+					fclose(target);
+					continue; // Skip this injection and move to the next
+				}
 
 				if (uasset_header_index < uasset_header_count - 1)
 					next_offset = uasset_headers[uasset_header_index + 1].offset;
 				else
 					next_offset = uasset_headers[uasset_header_index].offset + HCA_MAX_SIZE;
 
-				if (!replace_header_at_offset(uasset, uasset_headers[uasset_header_index].offset, next_offset,
+				if (!replace_header_at_offset(uasset,
+				                              uasset_headers[uasset_header_index].offset, next_offset,
 				                              injections[i].new_header, HCA_MAX_SIZE)) {
 					fprintf(stderr, "Failed to replace header in uasset for index %d\n",
 					        injections[i].index);
@@ -332,9 +369,12 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				// Perform replacement
 				fseek(target, target_headers[j].offset, SEEK_SET);
 
-				/*if (injections[i].index > 81) {
+				if (fixed_size) {
 					// Option 1: Replace content and zero out remaining bytes if new content is smaller
-					char* buffer = malloc(new_size);
+					long remaining = original_size - new_size;
+					long buffer_size = (remaining > 0) ? original_size : new_size;
+
+					char* buffer = malloc(buffer_size);
 					if (buffer) {
 						// Write new HCA content
 						fread(buffer, 1, new_size, new_hca);
@@ -342,10 +382,11 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 
 						// If new content is smaller, zero out remaining bytes
 						if (new_size < original_size) {
-							long remaining = original_size - new_size;
-							memset(buffer, 0, remaining);
+							// Zero out the remaining bytes if there's any remaining space
+							memset(buffer, 0, remaining);  // Only zero out remaining space
 							fwrite(buffer, 1, remaining, target);
 						}
+
 						free(buffer);
 					} else {
 						fprintf(stderr, "Memory allocation failed for buffer\n");
@@ -355,48 +396,54 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 					fclose(uasset);
 					fclose(target);
 					fclose(new_hca);
-				} else {*/
+				} else {
+					// Option 2: Delete and shift content
+					int padding_count;
+					int result = replaceFileContent(target, new_hca, target_headers, j,
+					                                target_header_count, file_end_offset, &padding_count);
+					if (result != 0) {
+						// Handle error
+						fprintf(stderr, "Failed to replace file content\n");
+						fclose(uasset);
+						fclose(target);
+						fclose(new_hca);
+						return -1;
+					}
 
-				// Option 2: Delete and shift content
-				int result = replaceFileContent(target, new_hca, target_headers, j,
-				                                target_header_count, file_end_offset);
-				if (result != 0) {
-					// Handle error
-					fprintf(stderr, "Failed to replace file content\n");
 					fclose(uasset);
 					fclose(target);
 					fclose(new_hca);
-					return -1;
-				}
 
-				fclose(uasset);
-				fclose(target);
-				fclose(new_hca);
+					long size_difference = new_size - original_size + padding_count;
 
-				long size_difference = new_size - original_size;
+					recalculate_subsequent_offsets(target_headers, target_header_count,
+					                               j, size_difference);
 
-				recalculate_subsequent_offsets(target_headers, target_header_count,
-				                               injections[i].index, size_difference);
+					if (write_header_csv(header_csv, target_headers, target_header_count) != 0) {
+						fprintf(stderr, "Failed to update target headers CSV file\n");
+						free(target_headers);
+						return false;
+					}
 
-				if (write_header_csv(header_csv, target_headers, target_header_count) != 0) {
-					fprintf(stderr, "Failed to update target headers CSV file\n");
-					free(target_headers);
-					return false;
-				}
+					file_end_offset += size_difference;
 
-				file_end_offset += size_difference;
-
-				// After injection is complete, update offsets
-				if (!update_offset_range(injections[i].target_file, uasset_path,
-				                         target_headers,
-				                         injections[i].index, target_header_count, file_end_offset)) {
-					fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
-					return false;
+					// After injection is complete, update offsets
+					if (!update_offset_range(injections[i].target_file, uasset_path,
+					                         target_headers,
+					                         injections[i].index > 81 ? 82 : 0, target_header_count, file_end_offset)) {
+						fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
+						return false;
+					}
+					// This one subtracts padding 0s as the game originally does, to a T
+					// Yet it for some reason doesn't like it
+					/*	if (!update_offset_range_with_padding(injections[i].target_file, uasset_path, target_headers,
+						                                      j,
+						                                      target_header_count, file_end_offset, size_difference, padding_count)) {
+							fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
+							return false;
+						}*/
 				}
 				break;
-
-
-
 			}
 		}
 
@@ -412,27 +459,27 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 	return true;
 }
 
-bool replace_header_at_offset(FILE* file, long offset, long next_offset,
+bool replace_header_at_offset(FILE * file, long offset, long next_offset,
                               const uint8_t* new_header, long new_header_size) {
-    // Calculate the available space between offsets
-    long available_space = next_offset - offset;
-    // Ensure we don't write beyond the available space
-    long bytes_to_write = (new_header_size <= available_space) ? new_header_size :
-                          available_space;
-    // Seek to the offset position and write the new header within the space limit
-    fseek(file, offset, SEEK_SET);
-    fwrite(new_header, 1, bytes_to_write, file);
-    // If the new header is smaller than the available space, zero out the remaining space
-    if (bytes_to_write < available_space) {
-        long bytes_to_zero = available_space - bytes_to_write;
-        uint8_t zero_buffer[1024] = {0};
-        // Zero out the remaining space until next_offset
-        while (bytes_to_zero > 0) {
-            long zero_chunk = (bytes_to_zero > sizeof(zero_buffer)) ? sizeof(
-                                  zero_buffer) : bytes_to_zero;
-            fwrite(zero_buffer, 1, zero_chunk, file);
-            bytes_to_zero -= zero_chunk;
-        }
-    }
-    return true;
+	// Calculate the available space between offsets
+	long available_space = next_offset - offset;
+	// Ensure we don't write beyond the available space
+	long bytes_to_write = (new_header_size <= available_space) ? new_header_size :
+	                      available_space;
+	// Seek to the offset position and write the new header within the space limit
+	fseek(file, offset, SEEK_SET);
+	fwrite(new_header, 1, bytes_to_write, file);
+	// If the new header is smaller than the available space, zero out the remaining space
+	if (bytes_to_write < available_space) {
+		long bytes_to_zero = available_space - bytes_to_write;
+		uint8_t zero_buffer[1024] = {0};
+		// Zero out the remaining space until next_offset
+		while (bytes_to_zero > 0) {
+			long zero_chunk = (bytes_to_zero > sizeof(zero_buffer)) ? sizeof(
+			                      zero_buffer) : bytes_to_zero;
+			fwrite(zero_buffer, 1, zero_chunk, file);
+			bytes_to_zero -= zero_chunk;
+		}
+	}
+	return true;
 }

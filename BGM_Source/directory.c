@@ -43,21 +43,18 @@ bool check_and_process_hca(const char* filepath, const char* dirpath,
 
 				memset(&injections[*injection_count], 0,
 				       sizeof(InjectionInfo)); // Clears the current entry
-				strncpy(injections[*injection_count].hca_path, filepath, MAX_PATH);
 				strncpy(injections[*injection_count].hca_path, filepath, MAX_PATH - 1);
 				injections[*injection_count].hca_path[MAX_PATH - 1] =
 				    '\0';  // Ensure null-termination
 
-
-
-				strncpy(injections[*injection_count].target_file, target_path, MAX_PATH);
-
 				strncpy(injections[*injection_count].target_file, target_path, MAX_PATH - 1);
 				injections[*injection_count].target_file[MAX_PATH - 1] =
 				    '\0';  // Ensure null-termination
+
 				injections[*injection_count].index = bgm_entries[i].index;
 
-				// Initialize new_header to zero to ensure no junk data
+				// Initialise new_header to zero to ensure no junk data
+				// I know I did a previous memset but shrug, got to double down
 				memset(injections[*injection_count].new_header, 0, HCA_MAX_SIZE);
 
 				// Read header with check for full read

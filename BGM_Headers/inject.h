@@ -5,6 +5,7 @@
 #include <unistd.h>
 #define BUFFER_SIZE 8192
 
+extern int fixed_size;
 bool inject_hca(const char* uasset_path, InjectionInfo* injections, int injection_count);
 bool create_backup(const char* filename);
 bool find_and_replace_header(FILE* file, const uint8_t* old_header, const uint8_t* new_header);

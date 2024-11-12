@@ -17,13 +17,17 @@
 "Generate_Paks_&_Utocs=true\n\n" \
 "# Game directory to move the output paks into\n" \
 "# It should point to your \\Paks folder\n" \
-"Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n\n"
+"Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n\n" \
+"# Make BGM size fixed, this will make any BGM bugs disappear but HCA size will be constrained\n" \
+"# Use this if you care about Menu music, but you might have to reduce your HCA's size\n" \
+"Fixed_Size_BGM=false\n\n"
 
 // Initialize config with default values
 void config_init(Config* config) {
-	config->Convert_HCA_Into_WAV = false;
+	config->Convert_HCA_Into_WAV = true;
 	config->Create_Separate_Mods = true;
 	config->Generate_Paks_And_Utocs = true;
+	config->Fixed_Size_BGM = false;
 	strcpy(config->Game_Directory,
 	       "C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks");
 }
@@ -68,6 +72,8 @@ static void parse_line(Config* config, char* line) {
 		strcpy(config->Game_Directory, value);
 	} else if (strcmp(key_lower, "generate_paks_&_utocs") == 0) {
 		config->Generate_Paks_And_Utocs = (strcasecmp(value, "true") == 0);
+	}else if (strcmp(key_lower, "fixed_size_bgm") == 0) {
+		config->Fixed_Size_BGM = (strcasecmp(value, "true") == 0);
 	}
 }
 

@@ -7,6 +7,7 @@
 
 extern Config config;
 int extract_flag = 0;
+int fixed_size = 0;
 int cmd = 0;
 
 int main(int argc, char* argv[]) {
@@ -33,9 +34,10 @@ int main(int argc, char* argv[]) {
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--extract") == 0) {
 			extract_flag = 1;
-		}
-		if (strcmp(argv[i], "--cmd") == 0) {
+		} else if (strcmp(argv[i], "--cmd") == 0) {
 			cmd = 1;
+		} else if (strcmp(argv[i], "--fixed-size") == 0) {
+			fixed_size = 1;
 		}
 	}
 
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (!cmd) {
-        printf("Processing complete.\n");
+		printf("Processing complete.\n");
 		press_enter_to_exit();
 	}
 	return return_value;

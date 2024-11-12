@@ -5,6 +5,19 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static int copy_oo2core() {
+    char source_path[MAX_PATH];
+    char dest_path[MAX_PATH];
+
+    snprintf(source_path, MAX_PATH, "%s\\oo2core_9_win64.dll", get_parent_directory(unrealrezen_path));
+    snprintf(dest_path, MAX_PATH, "oo2core_9_win64.dll");
+
+
+    if (copy_file(source_path, dest_path) != 0) {
+        return 1;
+    }
+    return 0;
+}
 static int check_existing_files(const char* game_dir, const char* mod_name) {
 	char file_path[MAX_PATH];
 	const char* extensions[] = {".utoc", ".pak", ".ucas"};
@@ -158,14 +171,16 @@ int utoc_package_and_cleanup(const char* mod_name) {
 	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
 
 	char game_dir[MAX_PATH];
-	if (strstr(config.Game_Directory,"Content\\Paks")) {
+	if (strstr(config.Game_Directory,"Content\\Paks") != NULL) {
 		strcpy(game_dir,get_parent_directory(config.Game_Directory));
 	} else
 		strcpy(game_dir,config.Game_Directory);
 
+    copy_oo2core();
+
 	// Generate UTOC command
 	snprintf(cmd, sizeof(cmd),
-	         "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s\\%s\" --compression-format Zlib "
+	         "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s%s\" --compression-format Zlib "
 	         "--engine-version GAME_UE5_1 --aes-key "
 	         "0xb2407c45ea7c528738a94c0a25ea8f419de4377628eb30c0ae6a80dd9a9f3ef0 "
 	         "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && pause && exit\"",
@@ -173,7 +188,7 @@ int utoc_package_and_cleanup(const char* mod_name) {
 	         game_dir, config.Game_Directory, mod_name);
 
 	int result = system(cmd);
-	if (result != 0) {
+	if (result != 0) { // Note that I use && exit which trashes the return value
 		printf("Failed to generate UTOC.\n");
 		cleanup(mod_folder);
 		return 1;

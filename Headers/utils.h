@@ -20,5 +20,7 @@ char* get_basename(const char* path);
 char* get_parent_directory(const char* path);
 char* replace_extension(const char* filename, const char* new_extension);
 int remove_directory_recursive(const char* path);
+int is_path_exists(const char *path);
+char* sanitize_path(const char* path);
 
 #endif // UTILS_H_INCLUDED

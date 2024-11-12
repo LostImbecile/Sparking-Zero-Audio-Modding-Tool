@@ -89,6 +89,15 @@ static long find_table_start(FILE* file, long header_pos) {
 	return -1;
 }
 
+
+static uint32_t read_le32(FILE* file, long position) {
+	uint8_t bytes[4];
+	if (fseek(file, position, SEEK_SET) != 0) return 0;
+	if (fread(bytes, 1, 4, file) != 4) return 0;
+
+	return bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+}
+
 bool update_offset_range(const char* awb_path, const char* uasset_path,
                          const HCAHeader* headers, int start_idx, int end_idx,
                          int file_end_offset) {
@@ -104,7 +113,7 @@ bool update_offset_range(const char* awb_path, const char* uasset_path,
 	fseek(uasset, 0, SEEK_END);
 	long uasset_size = ftell(uasset);
 
-	// Search for first header in last 8KB of file
+	// Search for first header in last 2KB of file
 	long search_start = uasset_size - 2048;
 	long first_header_pos = find_afs2_header(uasset, 0, search_start,
 	                        uasset_size);
@@ -160,14 +169,14 @@ bool update_offset_range(const char* awb_path, const char* uasset_path,
 		}
 
 		/*
-            // Update AWB's header as well
-            // This is commented out because it breaks things for some reason
-            long awb_write_pos = awb_table_pos + skip_bytes; // AWB has fixed 16-byte header
+		    // Update AWB's header as well
+		    // This is commented out because it breaks things for some reason
+		    long awb_write_pos = awb_table_pos + skip_bytes; // AWB has fixed 16-byte header
 
-            if (write_le32(awb, awb_write_pos, offset) != 4) {
-                printf("Failed to write to AWB at index %d\n", i);
-                continue;
-            }
+		    if (write_le32(awb, awb_write_pos, offset) != 4) {
+		        printf("Failed to write to AWB at index %d\n", i);
+		        continue;
+		    }
 		*/
 
 
@@ -194,6 +203,125 @@ bool update_offset_range(const char* awb_path, const char* uasset_path,
 	}
 
 	fclose(awb);
+	fclose(uasset);
+	return true;
+}
+
+bool update_offset_range_with_padding(const char* awb_path, const char* uasset_path,
+                                      const HCAHeader* headers,
+                                      int start_idx, int end_idx, int file_end_offset,
+                                      long size_difference, int padding_count) {
+
+/*	FILE* awb = fopen(awb_path, "rb+");
+
+	if (!awb) {
+		if (awb) fclose(awb);
+		return false;
+	}
+
+	long awb_table_pos = find_table_start(awb, 0);*/
+
+	FILE* uasset = fopen(uasset_path, "rb+");
+
+	fseek(uasset, 0, SEEK_END);
+	long uasset_size = ftell(uasset);
+
+	// Search for first header in last 2KB of file
+	long search_start = uasset_size - 2048;
+	long first_header_pos = find_afs2_header(uasset, 0, search_start,
+	                        uasset_size);
+	if (first_header_pos == -1) {
+		printf("Failed to find first AFS2 header\n");
+		fclose(uasset);
+		return false;
+	}
+
+	// Search for second header after the first one
+	long second_header_pos = find_afs2_header(uasset, 1, first_header_pos,
+	                         uasset_size);
+	if (second_header_pos == -1) {
+		printf("Failed to find second AFS2 header\n");
+		fclose(uasset);
+		return false;
+	}
+
+	// Find the actual table positions
+	long first_table_pos = find_table_start(uasset, first_header_pos);
+	long second_table_pos = find_table_start(uasset, second_header_pos);
+
+	if (first_table_pos == -1 || second_table_pos == -1) {
+		printf("Failed to find table start positions\n");
+		fclose(uasset);
+		return false;
+	}
+
+	int deduct = 0;
+	if (end_idx < 82) {
+		end_idx += 82;
+		deduct = 82;
+	}
+
+	const int FIRST_TABLE_SIZE = 82 * 4;
+	const int SECOND_TABLE_SIZE = 38 * 4;
+
+	for (int i = start_idx; i <= end_idx; i++) {
+		uint32_t offset;
+		long skip_bytes;
+
+		if (i < 82 || (i == end_idx && i == 82)) {
+			skip_bytes = FIRST_TABLE_SIZE + (i * 4);
+		} else {
+			skip_bytes = SECOND_TABLE_SIZE + ((i - deduct) * 4);
+		}
+
+
+		if (i == start_idx) {
+			// Do nothing for the start index
+			continue;
+		} else if (i == end_idx) {
+			// Use file_end_offset for the last offset
+			offset = file_end_offset;
+		} else if (i == start_idx + 1) {
+			// Apply padding and size difference ONLY to the next file
+			offset = headers[i - deduct].offset - padding_count;
+		} else {
+			long read_pos = i < 82
+			                ? first_table_pos + skip_bytes
+			                : second_table_pos + skip_bytes;
+			uint32_t original_offset = read_le32(uasset, read_pos);
+			// Apply only the size difference to subsequent files
+			offset = original_offset + size_difference;
+		}
+
+
+		// Update AWB's header as well
+		// This is commented out because it breaks things for some reason
+/*		long awb_write_pos = awb_table_pos + skip_bytes; // AWB has fixed 16-byte header
+
+		if (write_le32(awb, awb_write_pos, offset) != 4) {
+		    printf("Failed to write to AWB at index %d\n", i);
+		    continue;
+		}*/
+
+
+		// Write the modified offset back as usual
+		long uasset_write_pos = (i < 82 || (i == end_idx && i == 82))
+		                        ? first_table_pos + skip_bytes
+		                        : second_table_pos + skip_bytes;
+
+		if (uasset_write_pos + 4 > uasset_size) {
+			printf("UASSET write position out of bounds: %ld (size: %ld)\n",
+			       uasset_write_pos, uasset_size);
+			return false;
+		}
+
+		if (write_le32(uasset, uasset_write_pos, offset) != 4) {
+			printf("Failed to write to UASSET at index %d\n", i);
+			return false;
+		}
+
+	}
+
 	fclose(uasset);
 	return true;
 }

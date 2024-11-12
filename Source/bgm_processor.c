@@ -97,15 +97,20 @@ int process_bgm_directory(const char* dir_path) {
 	get_last_mod_time(awb_path1, &initial_mod_time_awb1);
 	get_last_mod_time(awb_path2, &initial_mod_time_awb2);
 
+	char arguments[20] = {0};
+	strcpy(arguments, "--cmd");
+	if (config.Fixed_Size_BGM)
+		strcat(arguments, " --fixed-size");
+
 	if (awb1_exists && awb2_exists) {
-		snprintf(command, sizeof(command), "\"\"%s\" --cmd \"%s\" \"%s\" \"%s\"\"",
-		         bgm_tool_path, awb_path1, awb_path2, dir_path);
+		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\" \"%s\"\"",
+		         bgm_tool_path, arguments, awb_path1, awb_path2, dir_path);
 	} else if (awb1_exists) {
-		snprintf(command, sizeof(command), "\"\"%s\" --cmd \"%s\" \"%s\"\"",
-		         bgm_tool_path, awb_path1, dir_path);
+		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
+		         bgm_tool_path, arguments, awb_path1, dir_path);
 	} else {
-		snprintf(command, sizeof(command), "\"\"%s\" --cmd \"%s\" \"%s\"\"",
-		         bgm_tool_path, awb_path2, dir_path);
+		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
+		         bgm_tool_path, arguments, awb_path2, dir_path);
 	}
 
 	int result = system(command);

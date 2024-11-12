@@ -16,7 +16,7 @@ extern char vgmstream_path[];
 extern int csv_loaded;
 
 // Initialization functions
-int initialize_program(const char* program_path);
+int initialise_program(const char* program_path);
 char* get_program_file_path(const char* filename, char* buffer, size_t buffer_size);
 void load_csv(void);
 

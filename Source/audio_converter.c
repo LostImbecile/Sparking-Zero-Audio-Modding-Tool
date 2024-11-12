@@ -69,38 +69,38 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 			snprintf(wav_path, sizeof(wav_path), "%s\\%s", folder, entry->d_name);
 			char* basename = get_basename(entry->d_name);
 			snprintf(hca_path, sizeof(hca_path), "%s\\%s.hca", folder, basename);
-			snprintf(temp_file, sizeof(temp_file), "%s\\temp_samples.txt", folder);
+			if (set_looping_points) {
+				snprintf(temp_file, sizeof(temp_file), "%s\\temp_samples.txt", folder);
 
-			// Get total samples using vgmstream
-			snprintf(command, sizeof(command), "\"\"%s\" -m \"%s\" > \"%s\"\"",
-			         vgmstream_path, wav_path, temp_file);
-			system(command);
-
-			int samples = 0;
-			FILE* temp = fopen(temp_file, "r");
-			if (temp) {
-				char buffer[1024] = {0};
-				while (fgets(buffer, sizeof(buffer), temp)) {
-					if (strstr(buffer, "stream total samples:") != NULL) {
-						char* samples_str = strstr(buffer, "samples:") + 8;
-						samples = atoi(samples_str);
-						break;
-					} else if (strstr(buffer, "samples: ") != NULL) {
-						char* samples_str = strstr(buffer, "samples: ") + 9;
-						samples = atoi(samples_str);
-						break;
+				// Get total samples using vgmstream
+				snprintf(command, sizeof(command), "\"\"%s\" -m \"%s\" > \"%s\"\"",
+				         vgmstream_path, wav_path, temp_file);
+				system(command);
+				int samples = 0;
+				FILE* temp = fopen(temp_file, "r");
+				if (temp) {
+					char buffer[1024] = {0};
+					while (fgets(buffer, sizeof(buffer), temp)) {
+						if (strstr(buffer, "stream total samples:") != NULL) {
+							char* samples_str = strstr(buffer, "samples:") + 8;
+							samples = atoi(samples_str);
+							break;
+						} else if (strstr(buffer, "samples: ") != NULL) {
+							char* samples_str = strstr(buffer, "samples: ") + 9;
+							samples = atoi(samples_str);
+							break;
+						}
+					}
+					fclose(temp);
+					remove(temp_file);
+					if (samples > 0) {
+						fprintf(batch_file, "echo Converting %s to HCA (adding loop points 0-%d)\n",
+						        basename, samples);
+						fprintf(batch_file, "\"%s\" \"%s\" \"%s\" --keycode %" PRIu64
+						        " --out-format hca -l 0-%d\n",
+						        vgaudio_cli_path, wav_path, hca_path, hca_key, samples);
 					}
 				}
-				fclose(temp);
-				remove(temp_file);
-			}
-
-			if (samples > 0 && set_looping_points) {
-				fprintf(batch_file, "echo Converting %s to HCA (adding loop points 0-%d)\n",
-				        basename, samples);
-				fprintf(batch_file, "\"%s\" \"%s\" \"%s\" --keycode %" PRIu64
-				        " --out-format hca -l 0-%d\n",
-				        vgaudio_cli_path, wav_path, hca_path, hca_key, samples);
 			} else {
 				fprintf(batch_file, "echo Converting %s to HCA\n", basename);
 				fprintf(batch_file, "\"%s\" \"%s\" \"%s\" --keycode %" PRIu64

@@ -30,6 +30,41 @@ char* get_parent_directory(const char* path) {
 	return parent_copy;
 }
 
+int is_path_exists(const char *path) {
+	struct stat st;
+	return (stat(path, &st) == 0);
+}
+
+// From Purple Hato
+char* sanitize_path(const char* path) {
+	if (!path) return NULL;
+
+	size_t len = strlen(path);
+	char* fixed_path = malloc(len + 1);
+	if (!fixed_path) return NULL;
+
+	size_t j = 0;
+	for (size_t i = 0; i < len; i++) {
+		// Ignore duplicate slashes
+		if (i > 0 && path[i] == path[i - 1] && (path[i] == '/' || path[i] == '\\'))
+			continue;
+		if (path[i] == '/') {
+			fixed_path[j++] = '\\';
+		}
+		// Skip only the Windows-illegal characters
+		else if (path[i] == '*' || path[i] == '?' ||
+		         path[i] == '|' || path[i] == '<' || path[i] == '>' ||
+		         path[i] == '"') {
+			continue;
+		} else {
+			fixed_path[j++] = path[i];
+		}
+	}
+	fixed_path[j] = '\0';
+
+	return fixed_path;
+}
+
 char* extract_name_from_path(const char* path) {
 	const char* last_slash = strrchr(path, '/');
 	const char* last_backslash = strrchr(path, '\\');
@@ -47,9 +82,12 @@ char* get_file_extension(const char* filename) {
 
 int create_directory(const char* path) {
 
-	if (strcmp(path, "C:") == 0 || strcmp(path, ".") == 0
-	        || strcmp(path, "..") == 0)
+	if (path == NULL || strlen(path) < 2 ||
+	        (path[1] == ':' && path[2] == '\0') ||
+	        strcmp(path, ".") == 0 ||
+	        strcmp(path, "..") == 0) {
 		return 0;
+	}
 
 	if (mkdir(path) != 0 && errno != EEXIST)
 		return 1;
