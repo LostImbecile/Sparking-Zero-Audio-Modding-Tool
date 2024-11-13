@@ -11,11 +11,17 @@
 5. Put the renamed `.wav` into the folder with the extracted HCAs.
 6. Drag the folder into the tool and enter a name for the mod.
 
-**That's it!**
+**That's it!** You can also see this [guide](https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.pnuxbb3cbn2y)
+
+## 🎺BGM
+Follow this [Guide](https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.0#heading=h.mdona1wxpcnp), [Spanish Translation By Ekonomia](https://docs.google.com/document/d/1ZyRd0iUqMNFcSFMW1cC1FB3ntIc9PmtWDeGvDbRIAGg/edit?tab=t.0#heading=h.mdona1wxpcnp)
+- You can replace all tracks in the game now  without the use of reloaded, and looping points can be set automatically without your interference, nor do you need to convert WAVs yourself
+- You can port all of your HCAs used for reloaded directly, and you can do the rest following the guide (see [Porting From Reloaded](https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.0#heading=h.4le3ikxk076w))
+- Some menus are bugged at times
 
 
 ### ⚠️ Disclaimer:
-**Does not support BGM, se_battle, se_ui, & se_ADVIF!**
+**Does not support se_battle, se_ui, & se_ADVIF!**
 
 
 ## 📋 Details
@@ -25,6 +31,7 @@ This tool handles all audio modding steps, including:
 - Automatically converting all `.wav` files in the dropped folder to **HCA** format.
 - Packaging folders back into `.awb` and injecting the new `.acb` into a `.uasset` file.
 - Moving the packaged mod directly into your game's **mods folder**.
+- Replaces BGM just like voices, and allows you to extract BGM files and listen to them directly
 
 Contact `lostimbecile` on Discord for any issues.
 
