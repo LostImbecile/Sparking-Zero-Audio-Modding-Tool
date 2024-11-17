@@ -1,5 +1,4 @@
 #include "file_preprocessor.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,7 +21,7 @@ char** preprocess_argv(int* argc, char* argv[]) {
 
     int filtered_count = 0;
 
-    // First pass: create entries
+    // First pass: create entries and mark duplicates
     for (int i = 1; i < *argc && filtered_count < MAX_PATH - 1; i++) {
         entries[filtered_count].path = strdup(argv[i]);
         if (entries[filtered_count].path == NULL) {
@@ -38,27 +37,18 @@ char** preprocess_argv(int* argc, char* argv[]) {
 
         entries[filtered_count].keep = true;
 
-        // Check for duplicates and apply rules
+        // Check for duplicates
         for (int j = 0; j < filtered_count; j++) {
             if (strcmp(entries[j].basename, entries[filtered_count].basename) == 0) {
-                // Current entry has same base name as a previous entry
+                // Duplicate found
                 if (entries[filtered_count].is_dir) {
-                    // Current entry is a directory
-                    entries[filtered_count].keep = false;  // Always remove duplicate directory
+                    entries[filtered_count].keep = false;  // Remove duplicate directory
                 } else if (entries[j].is_dir) {
-                    // Current entry is a file, previous is directory
-                    entries[j].keep = false;  // Remove the directory
+                    entries[j].keep = false; // Remove the previous directory entry
                 } else {
-                    // Both are files
-                    bool is_uasset = strstr(argv[i], ".uasset") != NULL;
-                    bool other_is_uasset = strstr(entries[j].path, ".uasset") != NULL;
-
-                    if (is_uasset) {
-                        entries[j].keep = false;
-                        entries[filtered_count].keep = true;
-                    } else if (!other_is_uasset) {
-                        entries[filtered_count].keep = false;
-                    }
+                     // Duplicate file, mark current one for removal (for now)
+                    entries[filtered_count].keep = false;
+                    // Prioritization logic will come later
                 }
                 break;
             }
@@ -66,7 +56,31 @@ char** preprocess_argv(int* argc, char* argv[]) {
         filtered_count++;
     }
 
-    // Second pass: create filtered argv
+    // Second pass: Apply prioritization within duplicate groups
+    for (int i = 0; i < filtered_count; i++) {
+        if (!entries[i].keep) continue; // Skip already marked for removal
+
+        for (int j = i + 1; j < filtered_count; j++) {
+            if (strcmp(entries[i].basename, entries[j].basename) == 0 && !entries[j].keep) {
+                // Found a duplicate group, prioritize .uasset
+                bool is_uasset_i = strstr(entries[i].path, ".uasset") != NULL;
+                bool is_uasset_j = strstr(entries[j].path, ".uasset") != NULL;
+
+                if (is_uasset_j && !is_uasset_i) {
+                    entries[i].keep = false; // Remove non-uasset in favor of uasset
+                    entries[j].keep = true;
+                    i = j; // Start the outer loop from the new kept entry
+                    break;
+                } else if (is_uasset_i && !is_uasset_j) {
+                    // Keep i, remove j (j is already marked as false)
+                    break;
+                }
+                // If both or neither are uasset, keep the first one (i)
+            }
+        }
+    }
+
+    // Third pass: create filtered argv
     int new_argc = 1;  // Keep argv[0] (program name)
     filtered_argv[0] = argv[0];
 

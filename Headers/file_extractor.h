@@ -5,8 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "config.h"
-
-#define MAX_PATH 1024
+#include "utils.h"
 
 extern char acb_editor_path[];
 extern Config config;

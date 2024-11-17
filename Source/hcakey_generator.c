@@ -1,5 +1,4 @@
 #include "hcakey_generator.h"
-#include "utils.h"
 #include <ctype.h>
 #include <sys/stat.h>
 
@@ -28,16 +27,26 @@ int read_csv(const char* full_path) {
 }
 
 void remove_suffix(char* filename) {
-	char* underscore = strrchr(filename, '_');
-	if (underscore) {
-		if (strlen(underscore) <= 3 && (isupper(underscore[1])
-		                                || isdigit(underscore[1]))) {
-			*underscore = '\0';
-		} else if (strlen(underscore) > 3 && underscore[1] == '*'
-		           && isupper(underscore[2])) {
-			*underscore = '\0';
-		}
-	}
+    char* underscore = strrchr(filename, '_');
+    if (underscore) {
+        // Check if there's any digit after underscore
+        char* after = underscore + 1;
+        while (*after) {
+            if (isdigit(*after)) {
+                return;  // Found a digit, keep the suffix
+            }
+            after++;
+        }
+
+        // No digits found, proceed with original suffix removal logic
+        if (strlen(underscore) <= 3 && (isupper(underscore[1])
+                                      || isdigit(underscore[1]))) {
+            *underscore = '\0';
+        } else if (strlen(underscore) > 3 && underscore[1] == '*'
+                   && isupper(underscore[2])) {
+            *underscore = '\0';
+        }
+    }
 }
 
 const char* find_key(const char* filename) {
@@ -65,7 +74,7 @@ const char* find_key(const char* filename) {
 
 void write_binary_key(const char* key, const char* folder) {
 	char hcakey_path[MAX_PATH];
-	snprintf(hcakey_path, sizeof(hcakey_path), "%s/.hcakey", folder);
+	snprintf(hcakey_path, sizeof(hcakey_path), "%s\\.hcakey", folder);
 
 	FILE* file = fopen(hcakey_path, "wb");
 	if (!file) {

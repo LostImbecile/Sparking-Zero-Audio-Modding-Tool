@@ -4,8 +4,8 @@
 
 #include "uasset_extractor.h"
 #include "hcakey_generator.h"
+#include "utils.h"
 
-#define MAX_PATH 1024
 #define MAX_FILES 1000
 
 int process_input(const char* input);

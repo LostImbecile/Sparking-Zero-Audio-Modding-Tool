@@ -4,8 +4,8 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "utils.h"
 
-#define MAX_PATH 1024
 
 typedef struct {
     bool Convert_HCA_Into_WAV;

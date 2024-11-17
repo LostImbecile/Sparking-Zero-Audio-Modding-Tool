@@ -5,6 +5,40 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static int verify_utoc_generation(const char* game_dir, const char* mod_name) {
+    char file_path[MAX_PATH];
+    const char* extensions[] = {".utoc", ".pak", ".ucas"};
+    int success = 1;  // Start optimistic, set to 0 if any check fails
+
+    // Check existence and size of each required file
+    for (int i = 0; i < 3; i++) {
+        snprintf(file_path, MAX_PATH, "%s\\~mods\\%s%s", game_dir, mod_name, extensions[i]);
+
+        // Check if file exists
+        struct stat file_stat;
+        if (stat(file_path, &file_stat) != 0) {
+            printf("Error: Missing required file: %s\n", file_path);
+            success = 0;
+            continue;
+        }
+
+        // For .ucas file, check if size is greater than 1KB
+        if (strcmp(extensions[i], ".ucas") == 0) {
+            if (file_stat.st_size < 1024) {  // 1KB
+                success = 0;
+            }
+        }
+    }
+
+    if (!success) {
+        printf("UTOC generation failed: some files are missing or invalid.\n");
+        printf("Ensure that your file exists in the game, or check common errors in the guide.\n");
+        getchar();
+    }
+
+    return success;
+}
+
 static int copy_oo2core() {
     char source_path[MAX_PATH];
     char dest_path[MAX_PATH];
@@ -183,7 +217,7 @@ int utoc_package_and_cleanup(const char* mod_name) {
 	         "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s%s\" --compression-format Zlib "
 	         "--engine-version GAME_UE5_1 --aes-key "
 	         "0xb2407c45ea7c528738a94c0a25ea8f419de4377628eb30c0ae6a80dd9a9f3ef0 "
-	         "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && pause && exit\"",
+	         "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && exit\"",
 	         unrealrezen_path, program_directory, mod_name,
 	         game_dir, config.Game_Directory, mod_name);
 
@@ -193,6 +227,11 @@ int utoc_package_and_cleanup(const char* mod_name) {
 		cleanup(mod_folder);
 		return 1;
 	}
+
+	if (!verify_utoc_generation(config.Game_Directory, mod_name)) {
+        cleanup(mod_folder);
+        return 1;
+    }
 
 	cleanup(mod_folder);
 	printf("UTOC generation successful.\n");

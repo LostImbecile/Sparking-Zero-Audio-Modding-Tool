@@ -4,7 +4,6 @@
 #include "uasset_injector.h"
 #include "utoc_generator.h"
 #include "pak_generator.h"
-#include "utils.h"
 #include <stdio.h>
 
 static bool folder_processed = false;
@@ -106,21 +105,28 @@ int generate_mod_packages(const char* foldername){
 	return 0;
 }
 
+#include <stdio.h>
+#include <string.h>
+
 const char* get_mod_name() {
-	static char mod_name[MAX_PATH] =
-	    "Mod_P";  // static to ensure persistence after function exits
-	char input[MAX_PATH];
+    static char mod_name[MAX_PATH] = "Mod_P"; // Static to ensure persistence after function exits
+    char input[MAX_PATH];
 
-	printf("\nEnter mod name ('_P' recommended to suffix) or press Enter for default 'Mod_P': ");
-	if (fgets(input, sizeof(input), stdin)) {
-		input[strcspn(input, "\n")] = 0;  // Remove the newline character
-		if (strlen(input) > 0) {
-			strncpy(mod_name, input, MAX_PATH - 1);
-			mod_name[MAX_PATH - 1] = '\0';  // Ensure null termination
-		}
-	}
+    printf("\nEnter mod name ('_P' will be added by the tool) or press Enter for default 'Mod_P': ");
+    if (fgets(input, sizeof(input), stdin)) {
+        input[strcspn(input, "\n")] = 0; // Remove the newline character
+        if (strlen(input) > 0) {
+            strncpy(mod_name, input, MAX_PATH - 1);
+            mod_name[MAX_PATH - 1] = '\0'; // Ensure null termination
+        }
+    }
 
-	return mod_name;
+    // Check if "_P" is already present in the mod_name
+    if (strstr(mod_name, "_P") == NULL) {
+        strncat(mod_name, "_P", MAX_PATH - strlen(mod_name) - 1); // Append "_P" if not found
+    }
+
+    return mod_name;
 }
 
 int package_combined_mod(const char* mod_name) {

@@ -1,5 +1,4 @@
 #include "audio_converter.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -51,7 +50,7 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 
 
 	// Write batch file header
-	fprintf(batch_file, "@echo off\n");
+	fprintf(batch_file, "@chcp 65001 >nul\n@echo off\n");
 	fprintf(batch_file, "echo Starting WAV to HCA conversion...\n");
 
 	struct dirent* entry;
@@ -126,7 +125,7 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 	}
 
 	// Execute the batch file in a new window and wait for completion
-	snprintf(command, sizeof(command), "start \"\" /wait cmd /C \"%s\"",
+	snprintf(command, sizeof(command), "start \"WAV to HCA Conversion\" /wait cmd /C \"chcp 65001 >nul && \"%s\"\"",
 	         batch_path);
 	return system(command);
 }
@@ -149,7 +148,7 @@ int process_hca_files(const char* folder) {
 	}
 
 	// Write batch file header
-	fprintf(batch_file, "@echo off\n");
+	fprintf(batch_file, "@chcp 65001 >nul\n@echo off\n");
 	fprintf(batch_file, "echo Starting HCA to WAV conversion...\n");
 
 	struct dirent* entry;
@@ -197,7 +196,7 @@ int process_hca_files(const char* folder) {
 
 	// Execute the batch file in a new window
 	char command[MAX_PATH * 2];
-	snprintf(command, sizeof(command), "start \"HCA to WAV Conversion\" \"%s\"",
+	snprintf(command, sizeof(command), "start \"HCA to WAV Conversion\" cmd /C \"chcp 65001 >nul && \"%s\"\"",
 	         batch_path);
 	system(command);
 

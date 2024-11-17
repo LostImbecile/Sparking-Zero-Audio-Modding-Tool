@@ -2,8 +2,7 @@
 #ifndef FILE_PREPROCESSOR_H
 #define FILE_PREPROCESSOR_H
 #include <stdbool.h>
-#define MAX_PATH 1024
-#define MAX_PATH_LENGTH 260
+#include "utils.h"
 
 typedef struct {
     char* path;       // Full path to the file

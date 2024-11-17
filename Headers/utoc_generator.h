@@ -3,7 +3,7 @@
 #define UTOC_GENERATOR_H
 #include "config.h"
 #include "utils.h"
-#define MAX_PATH 1024
+
 
 extern char unrealrezen_path[];
 extern char program_directory[];

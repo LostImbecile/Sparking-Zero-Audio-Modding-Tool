@@ -18,30 +18,42 @@ static void to_lower(char* str) {
 }
 
 // Function to move file to mods folder
-static int move_to_mods_folder(const char* source_path, const char* mod_name,
-                               const char* game_directory) {
-	char mods_folder[MAX_PATH];
-	char dest_path[MAX_PATH];
+static int move_to_mods_folder(const char* source_path, const char* mod_name, const char* game_directory) {
+    char mods_folder[MAX_PATH];
+    char dest_path[MAX_PATH];
 
-	// Create mods folder path
-	snprintf(mods_folder, MAX_PATH, "%s\\~mods", game_directory);
+    // First verify the PAK file size
+    struct stat file_stat;
+    if (stat(source_path, &file_stat) != 0) {
+        printf("Error: Cannot access PAK file (not generated): %s\n", source_path);
+        return 1;
+    }
 
-	// Create mods folder if it doesn't exist
-	if (create_directory(mods_folder) != 0) {
-		printf("Failed to create mods folder: %s\n", mods_folder);
-		return 1;
-	}
+    // Check if PAK file is larger than 1KB
+    if (file_stat.st_size < 1024) {  // 1KB
+        printf("\nError: Generated PAK file is too small, generation failed.\n");
+        return 1;
+    }
 
-	// Create destination path
-	snprintf(dest_path, MAX_PATH, "%s\\%s.pak", mods_folder, mod_name);
+    // Create mods folder path
+    snprintf(mods_folder, MAX_PATH, "%s\\~mods", game_directory);
 
-	remove(dest_path);
-	if (rename(source_path, dest_path) != 0) {
-		printf("Failed to move PAK file to mods folder\n");
-		return 1;
-	}
+    // Create mods folder if it doesn't exist
+    if (create_directory(mods_folder) != 0) {
+        printf("Failed to create mods folder: %s\n", mods_folder);
+        return 1;
+    }
 
-	return 0;
+    // Create destination path
+    snprintf(dest_path, MAX_PATH, "%s\\%s.pak", mods_folder, mod_name);
+
+    remove(dest_path);
+    if (rename(source_path, dest_path) != 0) {
+        printf("Failed to move generated PAK to mods folder. Please do so manually.\n");
+        return 1;
+    }
+
+    return 0;
 }
 
 int pak_create_structure(const char* file_path, const char* mod_name) {
@@ -102,8 +114,8 @@ int pak_package_and_cleanup(const char* mod_name) {
 
 	// Create unrealpak command
 	snprintf(cmd, sizeof(cmd),
-	         "start \"\" /wait cmd /C \"\"%s\" \"%s%s\" -compress && exit\"",
-	         unrealpak_path, program_directory, mod_name);
+	         "start \"\" /wait cmd /C \"\"%s\" \"%s%s\"\"",
+	         unrealpak_path_no_compression, program_directory, mod_name);
 
 	// Execute the command
 	int result = system(cmd);
@@ -116,7 +128,6 @@ int pak_package_and_cleanup(const char* mod_name) {
 
 	// Move the generated PAK file to mods folder
 	if (move_to_mods_folder(pak_path, mod_name, config.Game_Directory) != 0) {
-		printf("Failed to move generated PAK to mods folder. Please do so manually.\n");
 		cleanup(mod_folder);
 		getchar();
 		return 1;
@@ -124,6 +135,7 @@ int pak_package_and_cleanup(const char* mod_name) {
 
 	cleanup(mod_folder);
 	printf("PAK generation successful.\n");
+	getchar();
 	return 0;
 }
 

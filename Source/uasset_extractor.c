@@ -1,5 +1,4 @@
 #include "uasset_extractor.h"
-#include "utils.h"
 #include <string.h>
 
 int process_uasset(const char* uasset_path) {

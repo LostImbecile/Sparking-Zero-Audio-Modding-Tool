@@ -3,15 +3,13 @@
 #include "hcakey_generator.h"
 #include <stdio.h>
 #include <string.h>
-#include "utils.h"
-
-#define MAX_PATH 1024
 
 char program_directory[MAX_PATH] = {0};
 char vgaudio_cli_path[MAX_PATH] = {0};
 char acb_editor_path[MAX_PATH] = {0};
 char unrealrezen_path[MAX_PATH] = {0};
 char unrealpak_path[MAX_PATH] = {0};
+char unrealpak_path_no_compression[MAX_PATH] = {0};
 char vgmstream_path[MAX_PATH] = {0};
 char bgm_tool_path[MAX_PATH] = {0};
 int csv_loaded = 0;
@@ -30,6 +28,8 @@ static int initialize_tool_paths(void) {
 	         tools_path);
 	snprintf(unrealpak_path, MAX_PATH,
 	         "%sUnrealPak\\UnrealPak-With-Compression.bat", tools_path);
+	         snprintf(unrealpak_path_no_compression, MAX_PATH,
+	         "%sUnrealPak\\UnrealPak-Without-Compression.bat", tools_path);
 	snprintf(bgm_tool_path, MAX_PATH, "%sBgmModdingTool.exe", tools_path);
 
 	// Verify required executables exist

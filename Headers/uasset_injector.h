@@ -3,9 +3,10 @@
 #define UASSET_INJECTOR_H
 
 #include <stdio.h>
+#include "utils.h"
 
 #define BUFFER_SIZE 4096
-#define MAX_PATH 1024
+
 
 // Function declarations for the injector
 int inject_process_file(const char* input_path);

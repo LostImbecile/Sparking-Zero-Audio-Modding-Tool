@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#define MAX_PATH 1024
+#include "utils.h"
 
 extern char bgm_tool_path[MAX_PATH];
 

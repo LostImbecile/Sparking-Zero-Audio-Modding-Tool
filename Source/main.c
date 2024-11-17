@@ -47,11 +47,24 @@ int process_files(char** filtered_argv, int argc) {
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
-		printf("Usage: %s <file or folder paths>\n", extract_name_from_path(argv[0]));
-		printf("Press Enter to exit...");
+		printf("Usage (CMD): %s <file or folder paths>\nOR\n",
+		       extract_name_from_path(argv[0]));
+		printf("Drag and drop the following onto this EXE:\n");
+		printf("1. Files such as .awb, .uasset, and .acb.\n");
+		printf("2. Folders that the tool extracted, or folders with 'bgm' in their name for BGM.\n");
+		printf("\nImportant: Ensure all required files are present for the tool's usage.\n");
+		printf("\nGuides:\n");
+		printf("- BGM: https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.0\n");
+		printf("- Voices & Sound Effects: https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.qg24fpgvrtbx\n");
+		printf("\nLatest Downloads:\n");
+		printf("- https://gamebanana.com/tools/18312\n");
+		printf("- https://github.com/Lostlmbecile/Sparking-Zero-Audio-Modding-Tool/releases/latest\n");
+
+		printf("\nPress Enter to exit...");
 		getchar();
 		return 1;
 	}
+
 
 	char program_location[MAX_PATH] = {0};
 	if (strstr(argv[0], ":") == NULL) {

@@ -5,7 +5,6 @@
 #include "file_extractor.h"
 #include "file_packer.h"
 #include "bgm_processor.h"
-#include "utils.h"
 #include <string.h>
 
 int process_input(const char* input) {

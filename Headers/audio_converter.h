@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <inttypes.h>
-#define MAX_PATH 1024
+#include "utils.h"
 
 extern char vgaudio_cli_path[];
 extern char vgmstream_path[];

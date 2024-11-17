@@ -3,9 +3,9 @@
 #define PAK_GENERATOR_H
 #include "config.h"
 #include "utils.h"
-#define MAX_PATH 1024
 
 extern char unrealpak_path[];
+extern char unrealpak_path_no_compression[];
 extern char program_directory[];
 extern Config config;
 

@@ -3,8 +3,8 @@
 #define UASSET_EXTRACTOR_H
 
 #include <stdio.h>
+#include "utils.h"
 
-#define MAX_PATH 1024
 #define BUFFER_SIZE 4096
 
 int process_uasset(const char* uasset_path);

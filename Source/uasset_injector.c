@@ -1,5 +1,4 @@
 #include "uasset_injector.h"
-#include "utils.h"
 
 int inject_process_file(const char* input_path) {
 	char uasset_path[MAX_PATH];

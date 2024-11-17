@@ -4,11 +4,11 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "utils.h"
 
 #define MAX_FILENAME 256
 #define MAX_KEY_LENGTH 33
 #define MAX_ENTRIES 1000
-#define MAX_PATH 1024
 
 typedef struct {
     char filename[MAX_FILENAME];
