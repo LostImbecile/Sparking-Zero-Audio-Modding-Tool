@@ -1,5 +1,6 @@
 # Sparking Zero Audio Modding Tool
 
+- Alternate Download: [GameBanana](https://gamebanana.com/tools/18312)
 ## 🚀 Quick Instructions
 
 1. Put your Game's Pak directory path in the config file.
