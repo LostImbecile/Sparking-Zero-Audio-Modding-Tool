@@ -135,7 +135,6 @@ int pak_package_and_cleanup(const char* mod_name) {
 
 	cleanup(mod_folder);
 	printf("PAK generation successful.\n");
-	getchar();
 	return 0;
 }
 

@@ -92,6 +92,15 @@ int process_bgm_directory(const char* dir_path) {
 		return -1;
 	}
 
+	int encryption_successes = encrypt_hcas(dir_path, hca_key);
+	if (encryption_successes > 2) {
+		printf("%d HCAs were encrypted\n", encryption_successes);
+	} else if (encryption_successes == 1) {
+		printf("An HCA was encrypted\n");
+	} else
+		printf("\n");
+
+
 	time_t initial_mod_time_awb1, initial_mod_time_awb2;
 	get_last_mod_time(awb_path1, &initial_mod_time_awb1);
 	get_last_mod_time(awb_path2, &initial_mod_time_awb2);
