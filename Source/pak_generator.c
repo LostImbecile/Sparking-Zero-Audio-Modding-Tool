@@ -104,7 +104,7 @@ int pak_create_structure(const char* file_path, const char* mod_name) {
 }
 
 int pak_package_and_cleanup(const char* mod_name) {
-	char cmd[1024];
+	char cmd[MAX_PATH * 8];
 	char pak_path[MAX_PATH];
 	char mod_folder[MAX_PATH];
 	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);

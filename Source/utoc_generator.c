@@ -200,7 +200,7 @@ int utoc_create_structure(const char* file_path, const char* mod_name) {
 }
 
 int utoc_package_and_cleanup(const char* mod_name) {
-	char cmd[2 * MAX_PATH];
+	char cmd[MAX_PATH * 8];
 	char mod_folder[MAX_PATH];
 	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
 
@@ -214,7 +214,7 @@ int utoc_package_and_cleanup(const char* mod_name) {
 
 	// Generate UTOC command
 	snprintf(cmd, sizeof(cmd),
-	         "start \"\" /wait cmd /C  \"\"%s\" --content-path \"%s%s\" --compression-format Zlib "
+	         "start \"\" /wait cmd /C \"\"%s\" --content-path \"%s%s\" --compression-format Zlib "
 	         "--engine-version GAME_UE5_1 --aes-key "
 	         "0xb2407c45ea7c528738a94c0a25ea8f419de4377628eb30c0ae6a80dd9a9f3ef0 "
 	         "--game-dir \"%s\" --output-path \"%s\\~mods\\%s.utoc\" && exit\"",

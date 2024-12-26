@@ -28,58 +28,60 @@ uint64_t extract_hca_key(const char* folder) {
 }
 
 int encrypt_hcas(const char* folder, uint64_t hcakey) {
-    DIR* dir = opendir(folder);
-    if (!dir) {
-        return -1;
-    }
+	DIR* dir = opendir(folder);
+	if (!dir) {
+		return -1;
+	}
 
-    printf("Checking if any HCA is in need of encryption...");
+	printf("Checking if any HCA is in need of encryption...");
 
-    struct dirent* entry;
-    char input_path[MAX_PATH];
-    char output_path[MAX_PATH];
-    char command[MAX_PATH * 3];
-    char output[1024] = {0};
-    int success = 0;
-    FILE* output_file;
+	struct dirent* entry;
+	char input_path[MAX_PATH];
+	char output_path[MAX_PATH];
+	char command[MAX_PATH * 8];
+	char output[1024] = {0};
+	int success = 0;
+	FILE* output_file;
 
-    while ((entry = readdir(dir)) != NULL) {
-        const char* ext = get_file_extension(entry->d_name);
-        if (ext != NULL && strcasecmp(ext, "hca") == 0) {
-            // Construct full input path
-            snprintf(input_path, sizeof(input_path), "%s\\%s", folder, entry->d_name);
-            snprintf(output_path, sizeof(output_path), "%s\\%s", folder, entry->d_name);
+	while ((entry = readdir(dir)) != NULL) {
+		const char* ext = get_file_extension(entry->d_name);
+		if (ext != NULL && strcasecmp(ext, "hca") == 0) {
+			// Construct full input path
+			snprintf(input_path, sizeof(input_path), "%s\\%s", folder, entry->d_name);
+			snprintf(output_path, sizeof(output_path), "%s\\%s", folder, entry->d_name);
 
-            // Create a temporary file for output
-            char temp_output_path[MAX_PATH];
-            snprintf(temp_output_path, sizeof(temp_output_path), "%s\\temp_output_%d.txt", folder, rand());
+			// Create a temporary file for output
+			char temp_output_path[MAX_PATH];
+			snprintf(temp_output_path, sizeof(temp_output_path), "%s\\temp_output_%d.txt",
+			         folder, rand());
 
-            // Construct command with output redirected to temp file
-            snprintf(command, sizeof(command), "\"\"%s\" -i \"%s\" \"%s\" --keycode %" PRIu64 " >%s 2>&1\"",
-                     vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
+			// Construct command with output redirected to temp file
+			snprintf(command, sizeof(command),
+			         "\"\"%s\" -i \"%s\" \"%s\" --keycode %" PRIu64 " >%s 2>&1\"",
+			         vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
 
-            // Execute command
-            system(command);
+			// Execute command
+			system(command);
 
-            // Check output file
-            output_file = fopen(temp_output_path, "r");
-            if (output_file) {
-                if (fgets(output, sizeof(output), output_file) != NULL) {
-                    // If the specific error message is NOT found, count as success
-                    if (strstr(output, "Cannot find key to decrypt HCA file.") == NULL) {
-                        success++;
-                    }
-                }
-                fclose(output_file);
-            }
+			// Check output file
+			output_file = fopen(temp_output_path, "r");
+			if (output_file) {
+				if (fgets(output, sizeof(output), output_file) != NULL) {
+					// If the specific error message is NOT found, count as success
+					if (strstr(output, "Cannot find key to decrypt HCA file.") == NULL) {
+						success++;
+					}
+				}
+				fclose(output_file);
+			}
 
-            // Remove temporary output file
-            remove(temp_output_path);
-        }
-    }
+			// Remove temporary output file
+			remove(temp_output_path);
+		}
+	}
 
-    closedir(dir);
-    return success;
+	closedir(dir);
+	return success;
 }
 
 int process_wav_files(const char* folder, uint64_t hca_key,
@@ -112,7 +114,7 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 	char wav_path[MAX_PATH];
 	char hca_path[MAX_PATH];
 	char temp_file[MAX_PATH];
-	char command[MAX_PATH * 4];
+	char command[MAX_PATH * 8];
 	int has_files = 0;
 
 	while ((entry = readdir(dir)) != NULL) {
@@ -126,27 +128,35 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 			if (set_looping_points) {
 				snprintf(temp_file, sizeof(temp_file), "%s\\temp_samples.txt", folder);
 
-				// Get total samples using vgmstream
+				// Get total samples and sample rate using vgmstream
 				snprintf(command, sizeof(command), "\"\"%s\" -m \"%s\" > \"%s\"\"",
 				         vgmstream_path, wav_path, temp_file);
 				system(command);
 				int samples = 0;
+				int sample_rate = 0;
 				FILE* temp = fopen(temp_file, "r");
 				if (temp) {
 					char buffer[1024] = {0};
 					while (fgets(buffer, sizeof(buffer), temp)) {
-						if (strstr(buffer, "stream total samples:") != NULL) {
+						if (strstr(buffer, "sample rate:") != NULL) {
+							char* sample_rate_str = strstr(buffer, "sample rate:") + 12;
+							sample_rate = atoi(sample_rate_str);
+
+						} else if (strstr(buffer, "stream total samples:") != NULL) {
 							char* samples_str = strstr(buffer, "samples:") + 8;
 							samples = atoi(samples_str);
-							break;
-						} else if (strstr(buffer, "samples: ") != NULL) {
-							char* samples_str = strstr(buffer, "samples: ") + 9;
-							samples = atoi(samples_str);
-							break;
+							break; // No need to continue if we have both values
 						}
 					}
 					fclose(temp);
 					remove(temp_file);
+
+					if (sample_rate != 48000) {
+						fprintf(stderr,
+						        "Warning: File '%s' has a different sampling rate: %dHz, 48KHz is preferred\n",
+						        extract_name_from_path(wav_path), sample_rate);
+					}
+
 					if (samples > 0) {
 						fprintf(batch_file, "echo Converting %s to HCA (adding loop points 0-%d)\n",
 						        basename, samples);
@@ -180,7 +190,8 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 	}
 
 	// Execute the batch file in a new window and wait for completion
-	snprintf(command, sizeof(command), "start \"WAV to HCA Conversion\" /wait cmd /C \"chcp 65001 >nul && \"%s\"\"",
+	snprintf(command, sizeof(command),
+	         "start \"WAV to HCA Conversion\" /wait cmd /C \"chcp 65001 >nul && \"%s\"\"",
 	         batch_path);
 	return system(command);
 }
@@ -238,8 +249,16 @@ int process_hca_files(const char* folder) {
 		}
 	}
 
-	// Add completion message and cleanup
+	// Create path for metadata batch file
+	char metadata_batch_path[MAX_PATH];
+	snprintf(metadata_batch_path, sizeof(metadata_batch_path),
+	         "%s\\add_metadata.bat", folder);
+
+	// Add a line to run the metadata batch file after conversion
 	fprintf(batch_file, "echo Conversion complete!\n");
+	fprintf(batch_file, "if exist \"%s\" (\n", metadata_batch_path);
+	fprintf(batch_file, "    call \"%s\"\n", metadata_batch_path);
+	fprintf(batch_file, ")\n");
 	fprintf(batch_file, "del \"%s\\convert_hca.bat\" && exit\n", folder);
 	fclose(batch_file);
 	closedir(dir);
@@ -250,8 +269,9 @@ int process_hca_files(const char* folder) {
 	}
 
 	// Execute the batch file in a new window
-	char command[MAX_PATH * 2];
-	snprintf(command, sizeof(command), "start \"HCA to WAV Conversion\" cmd /C \"chcp 65001 >nul && \"%s\"\"",
+	char command[MAX_PATH * 8];
+	snprintf(command, sizeof(command),
+	         "start \"HCA to WAV Conversion\" cmd /C \"chcp 65001 >nul && \"%s\"\"",
 	         batch_path);
 	system(command);
 

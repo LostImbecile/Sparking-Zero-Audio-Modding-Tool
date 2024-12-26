@@ -5,6 +5,8 @@
 #include "audio_converter.h"
 #include "utoc_generator.h"
 #include "pak_generator.h"
+#include "add_metadata.h"
+#include "uasset_extractor.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -55,7 +57,7 @@ int process_bgm_directory(const char* dir_path) {
 	char awb_path1[MAX_PATH];
 	char awb_path2[MAX_PATH];
 	char uasset_path[MAX_PATH];
-	char command[MAX_PATH * 3];
+	char command[MAX_PATH * 8];
 
 	snprintf(awb_path1, MAX_PATH, "%s\\bgm_main.awb", parent_dir);
 	snprintf(awb_path2, MAX_PATH, "%s\\bgm_main_Cnk_00.awb", parent_dir);
@@ -197,7 +199,7 @@ int process_bgm_awb_file(const char* file_path) {
 		strcat(folder_path, "\\");
 		strcat(folder_path, get_basename(file_path)); // Build the folder path
 
-		char command[MAX_PATH * 2];
+		char command[MAX_PATH * 8];
 		snprintf(command, sizeof(command), "\"\"%s\" --extract --cmd \"%s\"\"",
 		         bgm_tool_path, file_path); // extract flag
 
@@ -210,9 +212,13 @@ int process_bgm_awb_file(const char* file_path) {
 
 		// Generate HCA key using the uasset in the created folder
 		char uasset_path[MAX_PATH];
-		snprintf(uasset_path, MAX_PATH, "%s/bgm_main.uasset",
+		snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset",
 		         get_parent_directory(file_path)); // Corrected path
 		generate_hcakey_dir(uasset_path, folder_path);
+		process_uasset(uasset_path);
+
+		generate_txtm(file_path);
+		add_metadata(file_path);
 
 		// Process HCA files in the folder
 		if (process_hca_files(folder_path) != 0) {

@@ -12,6 +12,7 @@ char unrealpak_path[MAX_PATH] = {0};
 char unrealpak_path_no_compression[MAX_PATH] = {0};
 char vgmstream_path[MAX_PATH] = {0};
 char bgm_tool_path[MAX_PATH] = {0};
+char metadata_tool_path[MAX_PATH] = {0};
 int csv_loaded = 0;
 Config config;
 
@@ -31,6 +32,7 @@ static int initialize_tool_paths(void) {
 	         snprintf(unrealpak_path_no_compression, MAX_PATH,
 	         "%sUnrealPak\\UnrealPak-Without-Compression.bat", tools_path);
 	snprintf(bgm_tool_path, MAX_PATH, "%sBgmModdingTool.exe", tools_path);
+	snprintf(metadata_tool_path, MAX_PATH, "%sAddWavMetadata.exe", tools_path);
 
 	// Verify required executables exist
 	FILE* vgaudio_test = fopen(vgaudio_cli_path, "r");

@@ -158,7 +158,7 @@ int package_combined_mod(const char* mod_name) {
 }
 
 int run_acb_editor_pack(const char* folderpath) {
-	char command[MAX_PATH * 2];
+	char command[MAX_PATH * 8];
 
 	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"", acb_editor_path,
 	         folderpath);

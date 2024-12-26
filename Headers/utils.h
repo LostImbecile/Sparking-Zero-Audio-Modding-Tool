@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-#define MAX_PATH 1024
+#define MAX_PATH 256
 
 void press_enter_to_exit();
 char* extract_name_from_path(const char* path);

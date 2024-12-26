@@ -13,6 +13,7 @@ extern char acb_editor_path[];
 extern char unrealrezen_path[];
 extern char unrealpak_path[];
 extern char vgmstream_path[];
+extern char metadata_tool_path[];
 extern int csv_loaded;
 
 // Initialization functions

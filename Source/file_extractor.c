@@ -1,5 +1,7 @@
 #include "file_extractor.h"
 #include "audio_converter.h"
+#include "track_info_utils.h"
+#include "add_metadata.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +37,7 @@ bool find_acb_file(const char* input_file, char* acb_path, size_t path_size) {
 }
 
 int run_acb_editor(const char* filepath) {
-	char command[MAX_PATH * 2];
+	char command[MAX_PATH * 8];
 
 	// Construct the command with proper quoting
 	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"", acb_editor_path,
@@ -66,6 +68,13 @@ int extract_and_process(const char* input_file) {
 	}
 
 	if (config.Convert_HCA_Into_WAV ) {
+	    // For files that need it
+        generate_txtm(input_file);
+		// Write metadata batch file
+        if (add_metadata(input_file) != 0) {
+            fprintf(stderr, "Error adding metadata.\n");
+            return 1;
+        }
         printf("Converting HCAs into WAV in different CMD.\n");
         printf("Remember: you can turn this off in config.ini any time!\n");
 		char folder_path[MAX_PATH];

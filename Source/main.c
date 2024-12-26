@@ -84,8 +84,7 @@ int main(int argc, char* argv[]) {
 	strcpy(program_location, sanitize_path(program_location));
 
 	if (!is_path_exists(program_location)) {
-		fprintf(stderr, "You have special characters in your path!\n"\
-		        "My tool does not support it\n"\
+		fprintf(stderr, "You have special characters in your path that my tool can't support!\n"\
 		        "Move it to a folder with only English/ASCII characters.\n");
 		printf("Press Enter to exit...");
 		getchar();
@@ -105,6 +104,7 @@ int main(int argc, char* argv[]) {
 	process_files(filtered_argv, argc);
 	process_and_package_folders(filtered_argv, argc);
 
+	printf("\nAlways be sure to use the right version of keys.csv and re-export from Fmodel on a game update\nFor more info, check the readme in the keys directory.\n\n");
 	// Clean up
 	free_filtered_argv(filtered_argv);
 	printf("Processing complete. Press Enter to exit...");
