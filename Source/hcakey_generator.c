@@ -94,7 +94,7 @@ void write_binary_key(const char* key, const char* folder) {
 
 void generate_hcakey(const char* filepath) {
 	const char* filename = get_basename(filepath);
-	char* directory = get_parent_directory(filepath);
+	const char* directory = get_parent_directory(filepath);
 	char folder_name[MAX_PATH];
 	snprintf(folder_name, sizeof(folder_name), "%s\\%.*s", directory,
 	         (int)(strrchr(filename, '.') - filename), filename);

@@ -8,12 +8,6 @@ void press_enter_to_exit() {
 	getchar();
 }
 
-/**
- * @brief Checks if a path points to a directory
- *
- * @param path Path to check
- * @return true if path is a directory, false otherwise
- */
 bool is_directory(const char* path) {
 	struct stat path_stat;
 	if (stat(path, &path_stat) == 0) {
@@ -22,12 +16,15 @@ bool is_directory(const char* path) {
 	return false;
 }
 
-char* get_parent_directory(const char* path) {
+const char* get_parent_directory(const char* path) {
 	char* path_copy = strdup(path);
+	if (path_copy == NULL) {
+		return "";
+	}
 	char* parent = dirname(path_copy);
-	char* parent_copy = strdup(parent);
+	const char* result = strdup(parent);
 	free(path_copy);
-	return parent_copy;
+	return (result == NULL) ? "" : result;
 }
 
 int is_path_exists(const char *path) {
@@ -35,63 +32,33 @@ int is_path_exists(const char *path) {
 	return (stat(path, &st) == 0);
 }
 
-// From Purple Hato
-char* sanitize_path(const char* path) {
-	if (!path) return NULL;
-
-	size_t len = strlen(path);
-	char* fixed_path = malloc(len + 1);
-	if (!fixed_path) return NULL;
-
-	size_t j = 0;
-	for (size_t i = 0; i < len; i++) {
-		// Ignore duplicate slashes
-		if (i > 0 && path[i] == path[i - 1] && (path[i] == '/' || path[i] == '\\'))
-			continue;
-		if (path[i] == '/') {
-			fixed_path[j++] = '\\';
-		}
-		// Skip only the Windows-illegal characters
-		else if (path[i] == '*' || path[i] == '?' ||
-		         path[i] == '|' || path[i] == '<' || path[i] == '>' ||
-		         path[i] == '"') {
-			continue;
-		} else {
-			fixed_path[j++] = path[i];
-		}
-	}
-	fixed_path[j] = '\0';
-
-	return fixed_path;
+const char* sanitize_path(const char* path) {
+	return (path == NULL) ? "" : path;
 }
 
-char* extract_name_from_path(const char* path) {
+const char* extract_name_from_path(const char* path) {
 	const char* last_slash = strrchr(path, '/');
 	const char* last_backslash = strrchr(path, '\\');
-	const char* last_separator = (last_slash > last_backslash) ? last_slash :
-	                             last_backslash;
+	const char* last_separator = (last_slash > last_backslash) ? last_slash : last_backslash;
 	const char* name = last_separator ? last_separator + 1 : path;
-	return strdup(name);
+	return name;
 }
 
-char* get_file_extension(const char* filename) {
-	char* dot = strrchr(filename, '.');
-	if (!dot || dot == filename) return NULL;
+const char* get_file_extension(const char* filename) {
+	const char* dot = strrchr(filename, '.');
+	if (!dot || dot == filename) return "";
 	return dot + 1;
 }
 
 int create_directory(const char* path) {
-
 	if (path == NULL || strlen(path) < 2 ||
 	        (path[1] == ':' && path[2] == '\0') ||
 	        strcmp(path, ".") == 0 ||
 	        strcmp(path, "..") == 0) {
 		return 0;
 	}
-
 	if (mkdir(path) != 0 && errno != EEXIST)
 		return 1;
-
 	return 0;
 }
 
@@ -100,17 +67,13 @@ int remove_directory_recursive(const char* path) {
 	if (!dir) {
 		return rmdir(path);
 	}
-
 	struct dirent *entry;
 	char full_path[MAX_PATH];
-
 	while ((entry = readdir(dir))) {
 		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
 			continue;
 		}
-
 		snprintf(full_path, MAX_PATH, "%s/%s", path, entry->d_name);
-
 		struct stat statbuf;
 		if (stat(full_path, &statbuf) == 0) {
 			if (S_ISDIR(statbuf.st_mode)) {
@@ -120,7 +83,6 @@ int remove_directory_recursive(const char* path) {
 			}
 		}
 	}
-
 	closedir(dir);
 	return rmdir(path);
 }
@@ -131,14 +93,12 @@ int copy_file(const char* src_path, const char* dest_path) {
 		printf("Failed to open source file: %s\n", src_path);
 		return 1;
 	}
-
 	FILE *dest = fopen(dest_path, "wb");
 	if (!dest) {
 		fclose(source);
 		printf("Failed to open destination file: %s\n", dest_path);
 		return 1;
 	}
-
 	char buffer[8192];
 	size_t bytes;
 	while ((bytes = fread(buffer, 1, sizeof(buffer), source)) > 0) {
@@ -149,7 +109,6 @@ int copy_file(const char* src_path, const char* dest_path) {
 			return 1;
 		}
 	}
-
 	fclose(source);
 	fclose(dest);
 	return 0;
@@ -159,12 +118,10 @@ int create_directory_recursive(const char* path) {
 	char tmp[MAX_PATH];
 	char* p = NULL;
 	size_t len;
-
 	strncpy(tmp, path, MAX_PATH - 1);
 	len = strlen(tmp);
 	if (tmp[len - 1] == '\\')
 		tmp[len - 1] = 0;
-
 	for (p = tmp + 1; *p; p++) {
 		if (*p == '\\') {
 			*p = 0;
@@ -182,12 +139,6 @@ int create_directory_recursive(const char* path) {
 	return 0;
 }
 
-/**
- * @brief Extracts the base name without extension from a file path
- *
- * @param path Full path to the file
- * @return char* Newly allocated string containing the base name
- */
 char* get_basename(const char* path) {
 	const char* last_slash = strrchr(path, '\\');
 	const char* filename = last_slash ? last_slash + 1 : path;
@@ -201,11 +152,30 @@ char* get_basename(const char* path) {
 	return basename;
 }
 
-char* replace_extension(const char* filename, const char* new_extension) {
-	char* result = strdup(filename);
-	char* dot = strrchr(result, '.');
-	if (dot) {
-		strcpy(dot + 1, new_extension);
+const char* replace_extension(const char* filename, const char* new_extension) {
+	const char* dot = strrchr(filename, '.');
+	if (!dot) {
+		size_t filename_len = strlen(filename);
+		size_t ext_len = strlen(new_extension);
+		char* result = malloc(filename_len + ext_len + 2);
+		if (result == NULL) {
+			return "";
+		}
+		strcpy(result, filename);
+		strcat(result, ".");
+		strcat(result, new_extension);
+		return result;
 	}
+
+	size_t len = dot - filename;
+	size_t ext_len = strlen(new_extension);
+	char* result = malloc(len + ext_len + 2);
+	if (result == NULL) {
+		return "";
+	}
+	strncpy(result, filename, len);
+	result[len] = '\0';
+	strcat(result, ".");
+	strcat(result, new_extension);
 	return result;
 }

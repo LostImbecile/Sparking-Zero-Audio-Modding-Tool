@@ -32,14 +32,10 @@ int pack_files(const char* foldername) {
 	printf("Packaging files from folder: %s\n",
 	       extract_name_from_path(foldername));
 
-	// Get parent directory for file operations
-	char* parent_dir = get_parent_directory(foldername);
-
 	// Step 1: Extract HCA key
 	uint64_t hca_key = extract_hca_key(foldername);
 	if (hca_key == 0) {
 		printf("Failed to extract HCA key\n");
-		free(parent_dir);
 		return -1;
 	}
 	printf("Extracted HCA key: %" PRIu64 "\n", hca_key);
@@ -48,30 +44,25 @@ int pack_files(const char* foldername) {
 	int conversion_result = process_wav_files(foldername, hca_key, 0);
 	if (conversion_result != 0) {
 		printf("Error during WAV to HCA conversion\n");
-		free(parent_dir);
 		return -1;
 	}
 
 	// Step 3: Run ACBEditor on the folder
 	int acb_result = run_acb_editor_pack(foldername);
 	if (acb_result != 0) {
-		free(parent_dir);
 		return -1;
 	}
 
 	// Step 4: Run the inject process
 	if (inject_process_file(foldername) != 0) {
-		free(parent_dir);
 		return -1;
 	}
 
 	if (config.Generate_Paks_And_Utocs
 	        && generate_mod_packages(foldername) != 0) {
-		free(parent_dir);
 		return -1;
 	}
 
-	free(parent_dir);
 	return 0;
 }
 

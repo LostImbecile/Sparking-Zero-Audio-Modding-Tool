@@ -15,7 +15,7 @@ int process_input(const char* input) {
 		return process_directory(input);
 	}
 
-	char* ext = get_file_extension(input);
+	const char* ext = get_file_extension(input);
 	if (ext == NULL) {
 		printf("Invalid file: %s\n", extract_name_from_path(input));
 		return 1;
@@ -50,13 +50,11 @@ int process_directory(const char* dir_path) {
 }
 
 int handle_uasset_directory(const char* dir_path) {
-	char* parent_dir = get_parent_directory(dir_path);
-	char* folder_name = extract_name_from_path(dir_path);
+	const char* parent_dir = get_parent_directory(dir_path);
+	const char* folder_name = extract_name_from_path(dir_path);
 	char uasset_path[MAX_PATH];
 	snprintf(uasset_path, MAX_PATH, "%s/%s.uasset", parent_dir, folder_name);
 	process_uasset(uasset_path);
-	free(parent_dir);
-	free(folder_name);
 	return pack_files(dir_path);
 }
 
@@ -90,7 +88,7 @@ int process_awb_file(const char* file_path) {
 		generate_hcakey(file_path);
 		return extract_and_process(file_path);
 	} else if (check_pair_exists(file_path, "uasset")) {
-		char* uasset_path = replace_extension(file_path, "uasset");
+		const char* uasset_path = replace_extension(file_path, "uasset");
 		process_uasset(uasset_path);
 		generate_hcakey(file_path);
 		return extract_and_process(file_path);
@@ -104,7 +102,7 @@ int check_pair_exists(const char* path, const char* extension) {
 	char pair_filename[MAX_PATH];
 
 	// Get the parent directory and base name
-	char* parent_dir = get_parent_directory(path);
+	const char* parent_dir = get_parent_directory(path);
 	const char* filename = get_basename(path);
 
 	// Construct the path to the expected file
@@ -114,10 +112,8 @@ int check_pair_exists(const char* path, const char* extension) {
 	FILE* file = fopen(pair_filename, "r");
 	if (file) {
 		fclose(file);
-		free(parent_dir);
 		return 1;
 	}
 
-	free(parent_dir);
 	return 0;
 }

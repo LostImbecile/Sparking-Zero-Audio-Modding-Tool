@@ -73,7 +73,7 @@ int extract_and_process(const char* input_file) {
 		// Write metadata batch file
         if (add_metadata(input_file) != 0) {
             fprintf(stderr, "Error adding metadata.\n");
-            return 1;
+            // Not a big deal if it fails
         }
         printf("Converting HCAs into WAV in different CMD.\n");
         printf("Remember: you can turn this off in config.ini any time!\n");

@@ -16,7 +16,7 @@ int process_bgm_input(const char* input) {
 	if (is_directory(input)) {
 		return process_bgm_directory(input);
 	} else {
-		char* ext = get_file_extension(input);
+		const char* ext = get_file_extension(input);
 		if (ext != NULL && strcasecmp(ext, "awb") == 0) {
 			return process_bgm_awb_file(input);
 		} else {

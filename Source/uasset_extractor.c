@@ -2,7 +2,7 @@
 #include <string.h>
 
 int process_uasset(const char* uasset_path) {
-    char* output_path = replace_extension(uasset_path, "acb");
+    const char* output_path = replace_extension(uasset_path, "acb");
 
     FILE* input = fopen(uasset_path, "rb");
     if (!input) {

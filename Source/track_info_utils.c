@@ -48,7 +48,7 @@ int run_vgmstream(const char* input_file, StreamData* data) {
 	// Execute command
 	int result = system(command);
 	if (result != 0) {
-		fprintf(stderr, "Error running vgmstream command. Return code: %d\n", result);
+		fprintf(stderr, "Error fetching metadata from vgmstream. Return code: %d\n", result);
 		remove(".txtm");
 		return -1;
 	}
@@ -76,7 +76,7 @@ int run_vgmstream(const char* input_file, StreamData* data) {
 
 // Function to parse vgmstream output
 int parse_vgmstream_output(FILE* output_file, StreamData* data) {
-	char line[1024];
+	char line[512];
 	int stream_count_found = 0;
 	uint16_t stream_count = 0;
 

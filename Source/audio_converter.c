@@ -48,7 +48,20 @@ int encrypt_hcas(const char* folder, uint64_t hcakey) {
 		if (ext != NULL && strcasecmp(ext, "hca") == 0) {
 			// Construct full input path
 			snprintf(input_path, sizeof(input_path), "%s\\%s", folder, entry->d_name);
-			snprintf(output_path, sizeof(output_path), "%s\\%s", folder, entry->d_name);
+
+            // Construct path for the corresponding .wav file using your replace_extension
+            const char* wav_path = replace_extension(input_path, "wav");
+            if (!wav_path) {
+                continue;
+            }
+
+            // Check if the .wav file exists using your is_path_exists
+            if (is_path_exists(wav_path)) {
+                continue;
+            }
+
+            // Construct full output path (no change here)
+            snprintf(output_path, sizeof(output_path), "%s\\%s", folder, entry->d_name);
 
 			// Create a temporary file for output
 			char temp_output_path[MAX_PATH];
@@ -123,7 +136,7 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 			has_files = 1;
 			// Construct full paths
 			snprintf(wav_path, sizeof(wav_path), "%s\\%s", folder, entry->d_name);
-			char* basename = get_basename(entry->d_name);
+			const char* basename = get_basename(entry->d_name);
 			snprintf(hca_path, sizeof(hca_path), "%s\\%s.hca", folder, basename);
 			if (set_looping_points) {
 				snprintf(temp_file, sizeof(temp_file), "%s\\temp_samples.txt", folder);
@@ -229,7 +242,7 @@ int process_hca_files(const char* folder) {
 			has_files = 1;
 			// Construct full paths
 			snprintf(hca_path, sizeof(hca_path), "%s\\%s", folder, entry->d_name);
-			char* basename = get_basename(entry->d_name);
+			const char* basename = get_basename(entry->d_name);
 			snprintf(wav_path, sizeof(wav_path), "%s\\%s.wav", folder, basename);
 
 			// Write conversion and deletion logic to batch file
