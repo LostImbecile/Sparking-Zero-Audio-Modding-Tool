@@ -51,76 +51,102 @@ static int rename_temp_folder(const char* temp_name, const char* mod_name) {
 
 	return 0;
 }
+typedef struct {
+	char base_name[32]; // Store the base name (e.g., "bgm_main")
+	char awb_path[MAX_PATH];
+	char uasset_path[MAX_PATH];
+	bool awb_exists;
+	time_t initial_mod_time_awb;
+	uint64_t hca_key;
+} BGMFile;
+
+// Function to construct full paths
+void construct_paths(BGMFile *bgm, const char *parent_dir) {
+	snprintf(bgm->awb_path, MAX_PATH, "%s\\%s.awb", parent_dir, bgm->base_name);
+	snprintf(bgm->uasset_path, MAX_PATH, "%s\\%s.uasset", parent_dir,
+	         bgm->base_name);
+}
 
 int process_bgm_directory(const char* dir_path) {
 	const char* parent_dir = get_parent_directory(dir_path);
-	char awb_path1[MAX_PATH];
-	char awb_path2[MAX_PATH];
-	char uasset_path[MAX_PATH];
 	char command[MAX_PATH * 8];
 
-	snprintf(awb_path1, MAX_PATH, "%s\\bgm_main.awb", parent_dir);
-	snprintf(awb_path2, MAX_PATH, "%s\\bgm_main_Cnk_00.awb", parent_dir);
-	snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset", parent_dir);
+	BGMFile bgm_files[] = {
+		{"bgm_main", "", "", false, 0, 0},
+		{"bgm_main_Cnk_00", "", "", false, 0, 0},
+		{"bgm_DLC_01", "", "", false, 0, 0},
+		{"bgm_DLC_02", "", "", false, 0, 0}
+	};
+	const int num_bgm_files = sizeof(bgm_files) / sizeof(bgm_files[0]);
 
-	int awb1_exists = 1, awb2_exists = 1;
+	const char* dir_basename = extract_name_from_path(dir_path);
+	int bgm_index = -1;
 
-	// Repack modified awb files if they exist
-	if (!check_pair_exists(awb_path1, "awb")) {
-		printf("Warning: bgm_main.awb not found.\n");
-		awb1_exists = 0;
-	}
-	if (!check_pair_exists(awb_path2, "awb")) {
-		if (awb1_exists) {
-			printf("Warning: bgm_main_Cnk_00.awb not found.\n");
-			awb2_exists = 0;
-		} else {
-			printf("Error: no bgm file is not present, no processing will be done.\n");
-			return -1;
+	if (strcmp(dir_basename, "bgm_DLC_01") == 0)      bgm_index = 2;
+	else if (strcmp(dir_basename, "bgm_DLC_02") == 0) bgm_index = 3;
+	else bgm_index =
+		    0; // Default to bgm_main
+
+
+	uint64_t hca_key_to_use = 0;
+
+	// Initialize and check existence
+	for (int i = 0; i < num_bgm_files; ++i) {
+		if (bgm_index == 0 && (i == 0
+		                       || i == 1)) construct_paths(&bgm_files[i], parent_dir);
+		else if (bgm_index > 0
+		         && i == bgm_index) construct_paths(&bgm_files[i], parent_dir);
+
+		if ((bgm_index == 0 && (i == 0 || i == 1)) || (bgm_index > 0
+		        && i == bgm_index)) {
+			bgm_files[i].awb_exists = check_pair_exists(bgm_files[i].awb_path, "awb");
+			if (bgm_files[i].awb_exists) {
+				get_last_mod_time(bgm_files[i].awb_path, &bgm_files[i].initial_mod_time_awb);
+				const char* key_str = find_key(bgm_files[i].awb_path);
+				if (key_str) {
+					bgm_files[i].hca_key = strtoull(key_str, NULL, 10);
+
+					if (hca_key_to_use == 0) hca_key_to_use = bgm_files[i].hca_key;
+				} else {
+					printf("Error: Could not find HCA key for %s\n", bgm_files[i].awb_path);
+					return -1;
+				}
+			}
 		}
 	}
 
-	if (!check_pair_exists(uasset_path, "uasset")) {
-		printf("Error: bgm_main.uasset is not present, no processing will be done.\n");
+	// Check if relevant AWB(s) exist
+	if (bgm_index == 0 && (!bgm_files[0].awb_exists
+	                       && !bgm_files[1].awb_exists)) {
+		printf("Error: bgm_main.awb and bgm_main_Cnk_00.awb are not present, no processing will be done.\n");
+		return -1;
+	} else if (bgm_index > 0 && !bgm_files[bgm_index].awb_exists) {
+		printf("Error: %s is not present, no processing will be done.\n",
+		       bgm_files[bgm_index].awb_path);
 		return -1;
 	}
 
-	uint64_t hca_key = 1013324708210664545;
-
-	// Process all WAV files in the folder
-	int conversion_result = process_wav_files(dir_path, hca_key, 1);
-	if (conversion_result != 0) {
+	// Process WAVs and encrypt HCAs
+	if (process_wav_files(dir_path, hca_key_to_use, 1) != 0) {
 		printf("Error during WAV to HCA conversion\n");
 		return -1;
 	}
+	int encryption_successes = encrypt_hcas(dir_path, hca_key_to_use);
+	if (encryption_successes > 0) printf("%d HCAs were encrypted\n",
+		                                     encryption_successes);
 
-	int encryption_successes = encrypt_hcas(dir_path, hca_key);
-	if (encryption_successes > 2) {
-		printf("%d HCAs were encrypted\n", encryption_successes);
-	} else if (encryption_successes == 1) {
-		printf("An HCA was encrypted\n");
-	} else
-		printf("\n");
+	// Prepare bgm_tool arguments
+	char arguments[20] = "--cmd";
+	if (config.Fixed_Size_BGM) strcat(arguments, " --fixed-size");
 
-
-	time_t initial_mod_time_awb1, initial_mod_time_awb2;
-	get_last_mod_time(awb_path1, &initial_mod_time_awb1);
-	get_last_mod_time(awb_path2, &initial_mod_time_awb2);
-
-	char arguments[20] = {0};
-	strcpy(arguments, "--cmd");
-	if (config.Fixed_Size_BGM)
-		strcat(arguments, " --fixed-size");
-
-	if (awb1_exists && awb2_exists) {
+	// Execute bgm_tool command
+	if (bgm_index == 0) {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\" \"%s\"\"",
-		         bgm_tool_path, arguments, awb_path1, awb_path2, dir_path);
-	} else if (awb1_exists) {
-		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
-		         bgm_tool_path, arguments, awb_path1, dir_path);
+		         bgm_tool_path, arguments, bgm_files[0].awb_path, bgm_files[1].awb_path,
+		         dir_path);
 	} else {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
-		         bgm_tool_path, arguments, awb_path2, dir_path);
+		         bgm_tool_path, arguments, bgm_files[bgm_index].awb_path, dir_path);
 	}
 
 	int result = system(command);
@@ -129,58 +155,51 @@ int process_bgm_directory(const char* dir_path) {
 		return 1;
 	}
 
+	// Handle pak generation
 	if (config.Generate_Paks_And_Utocs) {
-		int pak_awb1 = 0;
-		int pak_awb2 = 0;
+		const char* mod_name = get_mod_name();
+		bool any_modified = false;
 
-		if (awb1_exists) {
-			time_t post_mod_time_awb1;
-			if (get_last_mod_time(awb_path1, &post_mod_time_awb1) == 0 &&
-			        post_mod_time_awb1 != initial_mod_time_awb1) {
-				pak_awb1 = 1;
-			} else
-				printf("Note: bgm_main.awb was not modified and will be ignored.\n");
-		}
-		if (awb2_exists) {
-			time_t post_mod_time_awb2;
-			if (get_last_mod_time(awb_path2, &post_mod_time_awb2) == 0 &&
-			        post_mod_time_awb2 != initial_mod_time_awb2) {
-				pak_awb2 = 1;
-			} else
-				printf("Note: bgm_main_Cnk_00.awb was not modified and will be ignored.\n");
+		for (int i = 0; i < num_bgm_files; ++i) {
+			if ((bgm_index == 0 && (i == 0 || i == 1)) || (bgm_index > 0
+			        && i == bgm_index)) {
+				if (bgm_files[i].awb_exists
+				&& get_last_mod_time(bgm_files[i].awb_path, &(time_t) {
+				0
+			}) == 0 && bgm_files[i].initial_mod_time_awb != 0) {
+					any_modified = true;
+					printf("Note: %s was modified and will be packed.\n", bgm_files[i].awb_path);
+				}
+			}
 		}
 
-		if (!pak_awb1 && !pak_awb2) {
-			printf("Nothing to pack.\n");
+		if (!any_modified) {
+			printf("Note: No BGM files were modified. Skipping utoc and pak generation.\n");
 			return 0;
 		}
 
-		const char* mod_name = get_mod_name();
+		// Generate utoc
+		int utoc_result = -1;
+		if (bgm_index == 0) utoc_result = utoc_generate(
+			                                      bgm_files[0].uasset_path, mod_name);
+		else utoc_result = utoc_generate(bgm_files[bgm_index].uasset_path,
+			                                 mod_name);
 
-		// Generate utoc & ucas in mods folder
-		if (utoc_generate(uasset_path, mod_name) != 0) {
-			return -1;
+		if (utoc_result != 0) return -1;
+
+		// Create pak structure
+		for (int i = 0; i < num_bgm_files; ++i) {
+			if ((bgm_index == 0 && (i == 0 || i == 1)) || (bgm_index > 0
+			        && i == bgm_index)) {
+				if (bgm_files[i].awb_exists && bgm_files[i].initial_mod_time_awb != 0) {
+					if (pak_create_structure(bgm_files[i].awb_path, "temp_pak") != 0) return -1;
+				}
+			}
 		}
 
-		printf("\n");
-
-		if (pak_awb1 && pak_create_structure(awb_path1, "temp_pak")) {
-			return -1;
-		}
-
-		if (pak_awb2 && pak_create_structure(awb_path2, "temp_pak")) {
-			return -1;
-		}
-
-
-		if (rename_temp_folder("temp_pak", mod_name) != 0) {
-			return -1;
-		}
-
-		// Process the renamed pak folder
-		if (pak_package_and_cleanup(mod_name) != 0) {
-			return -1;
-		}
+		// Rename and package
+		if (rename_temp_folder("temp_pak", mod_name) != 0
+		        || pak_package_and_cleanup(mod_name) != 0) return -1;
 	}
 
 	return 0;
@@ -212,8 +231,14 @@ int process_bgm_awb_file(const char* file_path) {
 
 		// Generate HCA key using the uasset in the created folder
 		char uasset_path[MAX_PATH];
-		snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset",
-		         get_parent_directory(file_path)); // Corrected path
+		if (strstr(file_path, "bgm_main") != NULL)
+			snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset",
+			         get_parent_directory(file_path)); // Corrected path
+		else {
+			snprintf(uasset_path, MAX_PATH, "%s\\%s",
+			         get_parent_directory(file_path),
+			         replace_extension(extract_name_from_path(file_path), "uasset"));
+		}
 		generate_hcakey_dir(uasset_path, folder_path);
 		process_uasset(uasset_path);
 

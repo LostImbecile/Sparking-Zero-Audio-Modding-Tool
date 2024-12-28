@@ -3,11 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_PATH 1024
-
 char program_directory[MAX_PATH] = {0};
-BGMEntry bgm_entries[MAX_BGM_ENTRIES];
-int bgm_entry_count = 0;
 
 
 char* get_program_file_path(const char* filename, char* buffer, size_t buffer_size) {
@@ -25,11 +21,19 @@ int initialize_program(const char* program_path) {
         *(last_backslash + 1) = '\0';
     }
 
-    if (!read_bgm_dictionary("bgm_dictionary.csv")) {  //No need for bgm_entries and count params
+    if (!read_bgm_dictionary("bgm_dictionary.csv")) {
         fprintf(stderr, "Error loading BGM dictionary.\n");
-        return 1; // Or handle the error as appropriate
+        return 1;
     }
 
+    if(!read_acb_mapping("acb_mapping.csv")){
+        fprintf(stderr, "Error loading ACB mappings.\n");
+        return 1;
+    }
+    if (!read_hca_pairs("hca_pairs.csv")) {
+        fprintf(stderr, "Error loading HCA Pairs.\n");
+        return 1;
+    }
 
     return 0;
 }

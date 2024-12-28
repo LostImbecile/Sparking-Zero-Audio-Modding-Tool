@@ -32,6 +32,10 @@ int add_metadata(const char* input_file) {
 		is_bgm = 1;
 		if (strstr(input_file, "Cnk_00"))
 			deduct = 82;
+		else if (strstr(input_file, "DLC_01"))
+            deduct = 82 + 38;
+        if (strstr(input_file, "DLC_02"))
+            deduct = 82 + 38 + 13;
 	}
 	// Get folder path
 	char folder_path[MAX_PATH];

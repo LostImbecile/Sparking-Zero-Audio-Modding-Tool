@@ -11,17 +11,13 @@ int bgm_process_input(const char* input) {
 	if (is_directory(input)) {
 		return bgm_process_directory(input);
 	} else { // Assuming it's a file at this point
-		char* ext = get_file_extension(input);
+		const char* ext = get_file_extension(input);
 		if (!ext) {
 			printf("Invalid file: %s\n", extract_name_from_path(input));
 			return 1;
 		}
 
 		if (strcasecmp(ext, "awb") == 0) {
-			if (strstr(input, "DLC") != NULL || strstr(input, "dlc") != NULL ) {
-				printf("DLC is not supported");
-				return 1;
-			}
 			return bgm_process_awb_file(input);
 		} else {
 			printf("Unsupported file type: %s\n", ext);
@@ -43,6 +39,6 @@ int bgm_process_directory(const char* dir_path) {
 }
 
 int bgm_process_awb_file(const char* file_path) {
-	printf("Processing AWB file: %s\n", file_path);
+	printf("Processing AWB file: %s\n", extract_name_from_path(file_path));
 	return process_awb_file(file_path);
 }

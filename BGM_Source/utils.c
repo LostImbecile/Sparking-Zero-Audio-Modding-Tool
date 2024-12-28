@@ -31,26 +31,28 @@ bool is_directory(const char* path) {
 	return false;
 }
 
-char* get_parent_directory(const char* path) {
+const char* get_parent_directory(const char* path) {
 	char* path_copy = strdup(path);
+	if (path_copy == NULL) {
+		return "";
+	}
 	char* parent = dirname(path_copy);
-	char* parent_copy = strdup(parent);
+	const char* result = strdup(parent);
 	free(path_copy);
-	return parent_copy;
+	return (result == NULL) ? "" : result;
 }
 
-char* extract_name_from_path(const char* path) {
+const char* extract_name_from_path(const char* path) {
 	const char* last_slash = strrchr(path, '/');
 	const char* last_backslash = strrchr(path, '\\');
-	const char* last_separator = (last_slash > last_backslash) ? last_slash :
-	                             last_backslash;
+	const char* last_separator = (last_slash > last_backslash) ? last_slash : last_backslash;
 	const char* name = last_separator ? last_separator + 1 : path;
-	return strdup(name);
+	return name;
 }
 
-char* get_file_extension(const char* filename) {
-	char* dot = strrchr(filename, '.');
-	if (!dot || dot == filename) return NULL;
+const char* get_file_extension(const char* filename) {
+	const char* dot = strrchr(filename, '.');
+	if (!dot || dot == filename) return "";
 	return dot + 1;
 }
 
@@ -157,26 +159,51 @@ int create_directory_recursive(const char* path) {
  * @brief Extracts the base name without extension from a file path
  *
  * @param path Full path to the file
- * @return char* Newly allocated string containing the base name
+ * @return const char* Newly allocated string containing the base name
  */
-char* get_basename(const char* path) {
-	const char* last_slash = strrchr(path, '\\');
-	const char* filename = last_slash ? last_slash + 1 : path;
-	char* basename = strdup(filename);
-	if (basename == NULL) {
-		return NULL;
-	}
+const char* get_basename(const char* path) {
+    const char* last_slash = strrchr(path, '\\');
+    const char* filename = last_slash ? last_slash + 1 : path;
 
-	char* dot = strrchr(basename, '.');
-	if (dot) *dot = '\0';
-	return basename;
+    // Copy the filename portion
+    char* filename_copy = strdup(filename);
+    if (filename_copy == NULL) {
+        return NULL; // Handle allocation failure
+    }
+
+    // Find the dot in the copy
+    char* dot = strrchr(filename_copy, '.');
+    if (dot) {
+        *dot = '\0'; // Truncate the copy at the dot
+    }
+
+    return filename_copy;
 }
 
-char* replace_extension(const char* filename, const char* new_extension) {
-	char* result = strdup(filename);
-	char* dot = strrchr(result, '.');
-	if (dot) {
-		strcpy(dot + 1, new_extension);
+const char* replace_extension(const char* filename, const char* new_extension) {
+	const char* dot = strrchr(filename, '.');
+	if (!dot) {
+		size_t filename_len = strlen(filename);
+		size_t ext_len = strlen(new_extension);
+		char* result = malloc(filename_len + ext_len + 2);
+		if (result == NULL) {
+			return "";
+		}
+		strcpy(result, filename);
+		strcat(result, ".");
+		strcat(result, new_extension);
+		return result;
 	}
+
+	size_t len = dot - filename;
+	size_t ext_len = strlen(new_extension);
+	char* result = malloc(len + ext_len + 2);
+	if (result == NULL) {
+		return "";
+	}
+	strncpy(result, filename, len);
+	result[len] = '\0';
+	strcat(result, ".");
+	strcat(result, new_extension);
 	return result;
 }

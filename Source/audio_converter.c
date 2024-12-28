@@ -28,26 +28,41 @@ uint64_t extract_hca_key(const char* folder) {
 }
 
 int encrypt_hcas(const char* folder, uint64_t hcakey) {
-	DIR* dir = opendir(folder);
-	if (!dir) {
-		return -1;
-	}
+    DIR* dir = opendir(folder);
+    if (!dir) {
+        return -1;
+    }
 
-	printf("Checking if any HCA is in need of encryption...");
+    printf("Checking if any HCA is in need of encryption...\n");
 
-	struct dirent* entry;
-	char input_path[MAX_PATH];
-	char output_path[MAX_PATH];
-	char command[MAX_PATH * 8];
-	char output[1024] = {0};
-	int success = 0;
-	FILE* output_file;
+    struct dirent* entry;
+    char input_path[MAX_PATH];
+    char output_path[MAX_PATH];
+    char command[MAX_PATH * 8];
+    char output[1024] = { 0 };
+    int success = 0;
+    FILE* output_file;
 
-	while ((entry = readdir(dir)) != NULL) {
-		const char* ext = get_file_extension(entry->d_name);
-		if (ext != NULL && strcasecmp(ext, "hca") == 0) {
-			// Construct full input path
-			snprintf(input_path, sizeof(input_path), "%s\\%s", folder, entry->d_name);
+    while ((entry = readdir(dir)) != NULL) {
+        const char* ext = get_file_extension(entry->d_name);
+        if (ext != NULL && strcasecmp(ext, "hca") == 0) {
+            // Construct full input path
+            snprintf(input_path, sizeof(input_path), "%s\\%s", folder, entry->d_name);
+
+            // Check if HCA is encrypted by reading the first 3 bytes
+            FILE* hca_file = fopen(input_path, "rb");
+            if (!hca_file) {
+                continue;
+            }
+
+            char header[3];
+            fread(header, 1, 3, hca_file);
+            fclose(hca_file);
+
+            if (memcmp(header, "HCA", 3) != 0) {
+                // HCA is likely already encrypted, skip it
+                continue;
+            }
 
             // Construct path for the corresponding .wav file using your replace_extension
             const char* wav_path = replace_extension(input_path, "wav");
@@ -63,38 +78,35 @@ int encrypt_hcas(const char* folder, uint64_t hcakey) {
             // Construct full output path (no change here)
             snprintf(output_path, sizeof(output_path), "%s\\%s", folder, entry->d_name);
 
-			// Create a temporary file for output
-			char temp_output_path[MAX_PATH];
-			snprintf(temp_output_path, sizeof(temp_output_path), "%s\\temp_output_%d.txt",
-			         folder, rand());
+            // Create a temporary file for output
+            char temp_output_path[MAX_PATH];
+            snprintf(temp_output_path, sizeof(temp_output_path), "%s\\temp_output_%d.txt",
+                folder, rand());
 
-			// Construct command with output redirected to temp file
-			snprintf(command, sizeof(command),
-			         "\"\"%s\" -i \"%s\" \"%s\" --keycode %" PRIu64 " >%s 2>&1\"",
-			         vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
+            // Construct command with output redirected to temp file
+            snprintf(command, sizeof(command),
+                "\"\"%s\" -i \"%s\" \"%s\" --keycode %" PRIu64 " >%s 2>&1\"",
+                vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
 
-			// Execute command
-			system(command);
+            // Execute command
+            system(command);
 
-			// Check output file
-			output_file = fopen(temp_output_path, "r");
-			if (output_file) {
-				if (fgets(output, sizeof(output), output_file) != NULL) {
-					// If the specific error message is NOT found, count as success
-					if (strstr(output, "Cannot find key to decrypt HCA file.") == NULL) {
-						success++;
-					}
-				}
-				fclose(output_file);
-			}
+            // Check output file
+            output_file = fopen(temp_output_path, "r");
+            if (output_file) {
+                if (fgets(output, sizeof(output), output_file) != NULL) {
+                   success++;
+                }
+                fclose(output_file);
+            }
 
-			// Remove temporary output file
-			remove(temp_output_path);
-		}
-	}
+            // Remove temporary output file
+            remove(temp_output_path);
+        }
+    }
 
-	closedir(dir);
-	return success;
+    closedir(dir);
+    return success;
 }
 
 int process_wav_files(const char* folder, uint64_t hca_key,

@@ -82,8 +82,8 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 	long padding = 0;
 	if (content_end != file_end_offset && j < target_header_count - 1) {
 		long next_file_offset = content_start + new_size;
-		if (next_file_offset % 16 != 0) {
-			padding = 16 - (next_file_offset % 16);
+		if (next_file_offset % 32 != 0) {
+			padding = 32 - (next_file_offset % 32);
 			*padding_added = padding;
 		}
 	}
@@ -191,7 +191,7 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 
 	// Write padding bytes
 	if (padding > 0) {
-		char zero_buffer[16] = {0};
+		char zero_buffer[32] = {0};
 		if (fwrite(zero_buffer, 1, padding, target) != padding) {
 			free(buffer);
 			return -1;
@@ -217,18 +217,45 @@ long replaceFileContent(FILE* target, FILE* new_hca,
 	return 0;
 }
 
-bool inject_hca(const char* uasset_path, InjectionInfo* injections,
+bool inject_hca(const char* container_path, InjectionInfo* injections,
                 int injection_count) {
+
+	printf("Processing container: %s\n", extract_name_from_path(container_path));
+
+	FILE* container = fopen(container_path, "r+b");
+	if (!container) {
+		fprintf(stderr, "Error opening container file\n");
+		return false;
+	}
+
+	create_backup(container_path);
+
+	// Get target uasset headers - headers CSV should be in same directory as target file
+	UAssetHeader* uasset_headers = NULL;
+	int uasset_header_count = 0;
+	char uasset_header_csv[MAX_PATH];
+
+	// Get directory path of target uasset file
+	char target_uasset_dir[MAX_PATH] = {0};
+	strcpy(target_uasset_dir, get_parent_directory(container_path));
+
+	snprintf(uasset_header_csv, sizeof(uasset_header_csv),
+	         "%s_uasset_headers.csv", get_basename(container_path));
+
+	// Only needed once since containers are grouped
+	if (read_header_csv(uasset_header_csv, &uasset_headers,
+	                    &uasset_header_count) != 0) {
+		fclose(container);
+		free(uasset_headers);
+		return false;
+	}
+
 	// Process each injection
 	for (int i = 0; i < injection_count; i++) {
-		// First, find and replace header in uasset
-		FILE* uasset = fopen(uasset_path, "r+b");
-		if (!uasset) {
-			fprintf(stderr, "Error opening uasset file\n");
-			return false;
-		}
+		// Skip injections that were already processed (marked with index -1)
+		if (injections[i].index == -1) continue;
 
-		create_backup(uasset_path);
+
 
 		// Get target file headers - headers CSV should be in same directory as target file
 		HCAHeader* target_headers = NULL;
@@ -242,30 +269,13 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 		snprintf(header_csv, sizeof(header_csv), "%s\\%s_headers.csv",
 		         target_dir, get_basename(injections[i].target_file));
 
-
+		// Why read and write each time? I don't want to implement a cache and there
+		// multiple AWBs for the same container
 		if (read_header_csv(header_csv, &target_headers, &target_header_count) != 0) {
-			fclose(uasset);
-			continue;
-		}
-
-		// Get target uasset headers - headers CSV should be in same directory as target file
-		UAssetHeader* uasset_headers = NULL;
-		int uasset_header_count = 0;
-		char uasset_header_csv[MAX_PATH];
-
-		// Get directory path of target uasset file
-		char target_uasset_dir[MAX_PATH] = {0};
-		strcpy(target_uasset_dir, get_parent_directory(uasset_path));
-
-		snprintf(uasset_header_csv, sizeof(uasset_header_csv),
-		         "%s_uasset_headers.csv", get_basename(uasset_path));
-
-		// Why read and write this each time? Because there are tons of different
-		// AWBs and I want this part to be variable at least, despite the rest of
-		// fixed things, so I can change this in the very far future
-		if (read_header_csv(uasset_header_csv, &uasset_headers,
-		                    &uasset_header_count) != 0) {
-			fclose(uasset);
+			fclose(container);
+			free(uasset_headers);
+			free(target_headers);
+			fclose(container);
 			return false;
 		}
 
@@ -290,8 +300,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				if (uasset_header_index < 0) {
 					fprintf(stderr, "No matching header found for index %d in uasset\n",
 					        injections[i].index);
-					free(uasset_headers);
-					fclose(uasset);
 					continue; // Skip to the next injection
 				}
 
@@ -299,8 +307,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				FILE* new_hca = fopen(injections[i].hca_path, "rb");
 				if (!new_hca) {
 					fprintf(stderr, "Error opening new HCA file: %s\n", injections[i].hca_path);
-					fclose(uasset);
-					free(uasset_headers);
 					continue;
 				}
 
@@ -308,9 +314,7 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				FILE* target = fopen(injections[i].target_file, "r+b");
 				if (!target) {
 					fprintf(stderr, "Error opening target file: %s\n", injections[i].target_file);
-					fclose(uasset);
 					fclose(new_hca);
-					free(uasset_headers);
 					continue;
 				}
 
@@ -321,7 +325,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				fseek(new_hca, 0, SEEK_END);
 				long new_size = ftell(new_hca);
 				fseek(new_hca, 0, SEEK_SET);
-
 
 				long next_offset;
 				if (j < target_header_count - 1)
@@ -345,7 +348,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 						        remainder);
 
 					fclose(new_hca);
-					fclose(uasset);
 					fclose(target);
 					continue; // Skip this injection and move to the next
 				}
@@ -355,13 +357,12 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 				else
 					next_offset = uasset_headers[uasset_header_index].offset + HCA_MAX_SIZE;
 
-				if (!replace_header_at_offset(uasset,
+				if (!replace_header_at_offset(container,
 				                              uasset_headers[uasset_header_index].offset, next_offset,
 				                              injections[i].new_header, HCA_MAX_SIZE)) {
 					fprintf(stderr, "Failed to replace header in uasset for index %d\n",
 					        injections[i].index);
 					fclose(new_hca);
-					fclose(uasset);
 					fclose(target);
 					continue;
 				}
@@ -392,8 +393,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 						fprintf(stderr, "Memory allocation failed for buffer\n");
 					}
 
-
-					fclose(uasset);
 					fclose(target);
 					fclose(new_hca);
 				} else {
@@ -404,13 +403,14 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 					if (result != 0) {
 						// Handle error
 						fprintf(stderr, "Failed to replace file content\n");
-						fclose(uasset);
 						fclose(target);
 						fclose(new_hca);
-						return -1;
+						free(uasset_headers);
+						free(target_headers);
+						fclose(container);
+						return false;
 					}
 
-					fclose(uasset);
 					fclose(target);
 					fclose(new_hca);
 
@@ -421,27 +421,37 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 
 					if (write_header_csv(header_csv, target_headers, target_header_count) != 0) {
 						fprintf(stderr, "Failed to update target headers CSV file\n");
+						free(uasset_headers);
 						free(target_headers);
+						fclose(container);
 						return false;
 					}
 
 					file_end_offset += size_difference;
 
 					// After injection is complete, update offsets
-					if (!update_offset_range(injections[i].target_file, uasset_path,
+					// injections[i].index OR get_file_index_start(injections[i].target_file)
+					if (!update_offset_range(injections[i].target_file, container_path,
 					                         target_headers,
-					                         injections[i].index > 81 ? 82 : 0, target_header_count, file_end_offset)) {
+					                         get_file_index_start(injections[i].target_file), target_header_count, file_end_offset)) {
 						fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
+						free(uasset_headers);
+						free(target_headers);
+						fclose(container);
 						return false;
 					}
 					// This one subtracts padding 0s as the game originally does, to a T
 					// Yet it for some reason doesn't like it
-					/*	if (!update_offset_range_with_padding(injections[i].target_file, uasset_path, target_headers,
-						                                      j,
-						                                      target_header_count, file_end_offset, size_difference, padding_count)) {
-							fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
-							return false;
-						}*/
+					/*if (!update_offset_range_with_padding(injections[i].target_file, container_path,
+					                                      target_headers,
+					                                      get_file_index_start(injections[i].target_file),
+					                                      target_header_count, file_end_offset, size_difference, padding_count)) {
+						fprintf(stderr, "Failed to update offsets, your uasset is corrupted.\n");
+						free(uasset_headers);
+						free(target_headers);
+						fclose(container);
+						return false;
+					}*/
 				}
 				break;
 			}
@@ -453,7 +463,6 @@ bool inject_hca(const char* uasset_path, InjectionInfo* injections,
 		}
 
 		free(target_headers);
-		fclose(uasset);
 	}
 
 	return true;
