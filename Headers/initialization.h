@@ -12,6 +12,8 @@ extern char vgaudio_cli_path[];
 extern char acb_editor_path[];
 extern char unrealrezen_path[];
 extern char unrealpak_path[];
+extern char unrealpak_exe_path[];
+extern char unrealpak_path_no_compression[];
 extern char vgmstream_path[];
 extern char metadata_tool_path[];
 extern int csv_loaded;

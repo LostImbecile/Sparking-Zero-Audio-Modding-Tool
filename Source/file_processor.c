@@ -8,7 +8,7 @@
 #include <string.h>
 
 int process_input(const char* input) {
-     if (strstr(input, "bgm") || strstr(input, "BGM")) {
+	if (strstr(input, "bgm") || strstr(input, "BGM")) {
 		return process_bgm_input(input);
 	}
 	if (is_directory(input)) {
@@ -31,10 +31,31 @@ int process_input(const char* input) {
 		return process_uasset_file(input);
 	} else if (strcasecmp(ext, "awb") == 0) {
 		return process_awb_file(input);
+	} else if (strcasecmp(ext, "pak") == 0) {
+		return process_pak_file(input);
 	} else {
 		printf("Unsupported file type: %s\n", ext);
 		return 0;
 	}
+}
+
+int process_pak_file(const char* file_path){
+    char cmd[MAX_PATH * 8];
+    char* base_name = get_basename(file_path);
+
+	// Create unrealpak command
+	snprintf(cmd, sizeof(cmd),
+	         "\"\"%s\" \"%s\" -extract \"%s\\%s\"\"",
+	         unrealpak_exe_path, file_path, get_parent_directory(file_path), base_name);
+
+    free(base_name);
+	// Execute the command
+	int result = system(cmd);
+	if (result != 0) {
+		printf("Failed to extract PAK.\n");
+		return 1;
+	}
+	return 0;
 }
 
 int process_directory(const char* dir_path) {
