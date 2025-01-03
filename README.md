@@ -24,6 +24,10 @@ Follow this [Guide](https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO
 ### ⚠️ Disclaimer:
 **Does not support se_battle, se_ui, & se_ADVIF!**
 
+## 📝 Notes:
+- **File-name sensitive**: Ensure all file names match.
+- Keep the generated **`.hcakey`** in the folder—it’s needed to reconstruct the original key.
+- Always retain the **Tools folder** and **`keys.csv`** in the directory.
 
 ## 📋 Details
 
@@ -36,45 +40,6 @@ This tool handles all audio modding steps, including:
 
 Contact `lostimbecile` on Discord for any issues.
 
-As for code, I didn't bother writing docs or comments for everything, sorry about that, modify the pak and utoc generators to use it with other games.
+As for code, I didn't bother writing docs or comments for everything, nor did I structure it in a reasonable way (everything done in a hurry using tools when I could), sorry about that, modify the pak and utoc generators to use it with other games.
 
-## 🔄 Process
-
-### Extraction:
-1. **Drag & Drop** any `.acb`, `.uasset`, or `.awb` files into the tool.
-2. The tool **checks for matching pairs** and **extracts `.acb` from `.uasset`** if needed.
-3. Duplicate pairs are **filtered automatically**, so no manual selection is required.
-
-### Packaging & Conversion:
-1. Locate the **HCA** you want to replace and put your renamed `.wav` into the corresponding folder.
-2. **Drag & Drop** all folders you want to repackage into `.awb`.
-3. Provide a name for your mod when prompted.
-4. The tool:
-   - Converts all `.wav` files in the folders to **HCA** and replaces old files.
-   - Checks if the `.acb` or `.uasset` exists and extracts `.acb` if needed.
-   - Packages the folder into `.awb` and **creates a backup** of the `.uasset` file.
-   - Injects the new `.acb` into the `.uasset` file.
-   - Uses **UnrealPak** and **UnrealReZen** to pack the files into the mods folder.
-
-
-### 📝 Notes:
-- **File-name sensitive**: Ensure all file names match.
-- Keep the generated **`.hcakey`** in the folder—it’s needed to reconstruct the original key.
-- Always retain the **Tools folder** and **`keys.csv`** in the directory.
-
-
-## 💡 Example:
-
-1. **Drop `BTCLV_0000_00_JP.uasset`** into the tool:
-   - The tool checks if matching `.awb` and `.acb` files exist.
-   - If `.acb` is missing, it extracts it from the `.uasset` file.
-   - The tool extracts `.awb` and stores its **`.hcakey`** in a folder named `BTCLV_0000_00_JP`.
-
-2. Put `00121_streaming.wav` into the generated folder.
-
-3. Drag the folder into the tool.
-   - The tool converts the `.wav` into **HCA** using the reconstructed key and replaces the old file.
-   - The tool then packages the folder into `.awb` and injects the new `.acb` into the `.uasset` file.
-
-4. Input a name for your mod.
-   - The tool uses **UnrealPak** and **UnrealReZen** to finalise the mod and place it in the **mods folder**.
+The vgmstream I use was forked and modified: https://github.com/Lostlmbecile/vgmstream-fork-dbsz 
