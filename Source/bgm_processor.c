@@ -102,9 +102,9 @@ int process_bgm_directory(const char* dir_path) {
 			bgm_files[i].awb_exists = check_pair_exists(bgm_files[i].awb_path, "awb");
 			if (bgm_files[i].awb_exists) {
 				get_last_mod_time(bgm_files[i].awb_path, &bgm_files[i].initial_mod_time_awb);
-				const char* key_str = find_key(bgm_files[i].awb_path);
-				if (key_str) {
-					bgm_files[i].hca_key = strtoull(key_str, NULL, 10);
+				uint64_t key = get_key(bgm_files[i].awb_path);
+				if (key != (uint64_t) -1) {
+					bgm_files[i].hca_key = key;
 
 					if (hca_key_to_use == 0) hca_key_to_use = bgm_files[i].hca_key;
 				} else {
@@ -134,6 +134,9 @@ int process_bgm_directory(const char* dir_path) {
 	int encryption_successes = encrypt_hcas(dir_path, hca_key_to_use);
 	if (encryption_successes > 0) printf("%d HCAs were encrypted\n",
 		                                     encryption_successes);
+
+	// In case the option was on
+	rename_files_back(dir_path);
 
 	// Prepare bgm_tool arguments
 	char arguments[20] = "--cmd";

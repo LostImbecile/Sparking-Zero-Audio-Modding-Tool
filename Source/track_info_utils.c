@@ -36,7 +36,7 @@ int run_vgmstream(const char* input_file, StreamData* data) {
 
 	// Construct command
 	int command_length = snprintf(command, sizeof(command),
-	                              "\"\"%s\" -m -S 0 -i \"%s\" > \"%s\"\"", vgmstream_path, input_file,
+	                              "\"\"%s\" -m -S 0 -i \"%s\" > \"%s\" 2> NUL\"", vgmstream_path, input_file,
 	                              temp_output_filename);
 	if (command_length < 0 || command_length >= sizeof(command)) {
 		fprintf(stderr,

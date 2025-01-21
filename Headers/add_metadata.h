@@ -3,8 +3,10 @@
 
 #include "track_info_utils.h"
 #include "utils.h"
+#include "config.h"
 
 extern char metadata_tool_path[];
+extern Config config;
 
 /**
  * @brief Creates a batch file that adds metadata to extracted audio files.
@@ -13,5 +15,9 @@ extern char metadata_tool_path[];
  * @return 0 on success, non-zero on failure.
  */
 int add_metadata(const char* input_file);
+
+void rename_files_back(const char* foldername);
+int rename_hcas(const char* input_file);
+void sanitize_filename(const char* input, char* output);
 
 #endif // ADD_METADATA_H

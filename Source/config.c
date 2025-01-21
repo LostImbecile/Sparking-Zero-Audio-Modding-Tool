@@ -20,7 +20,11 @@
 "Game_Directory=\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks\"\n\n" \
 "# Make BGM size fixed, this will make any BGM bugs disappear but HCA size will be constrained\n" \
 "# Use this if you care about Menu music, but you might have to reduce your HCA's size\n" \
-"Fixed_Size_BGM=false\n\n"
+"Fixed_Size_BGM=false\n\n" \
+"# Renames \"XXXXX_streaming\" files into their CueName, then back to XXXXX_streaming on packaging\n" \
+"# Format: \"Cue_N - CueName1;CueName2;etc...\" Where N is the number of the file, needed for repackaging\n" \
+"# You can name your file 'Cue_N' and it'll still replace it correctly, no need to type the entire name\n" \
+"Use_Cue_Names=false\n\n"
 
 // Initialize config with default values
 void config_init(Config* config) {
@@ -28,6 +32,7 @@ void config_init(Config* config) {
 	config->Create_Separate_Mods = true;
 	config->Generate_Paks_And_Utocs = true;
 	config->Fixed_Size_BGM = false;
+	config->Use_Cue_Names = false;
 	strcpy(config->Game_Directory,
 	       "C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks");
 }
@@ -72,42 +77,44 @@ static void parse_line(Config* config, char* line) {
 		strcpy(config->Game_Directory, value);
 	} else if (strcmp(key_lower, "generate_paks_&_utocs") == 0) {
 		config->Generate_Paks_And_Utocs = (strcasecmp(value, "true") == 0);
-	}else if (strcmp(key_lower, "fixed_size_bgm") == 0) {
+	} else if (strcmp(key_lower, "fixed_size_bgm") == 0) {
 		config->Fixed_Size_BGM = (strcasecmp(value, "true") == 0);
+	} else if (strcmp(key_lower, "use_cue_names") == 0) {
+		config->Use_Cue_Names = (strcasecmp(value, "true") == 0);
 	}
 }
 
 // Load or create config file
-	bool config_load(Config * config, const char* filename) {
-		config_init(config);  // Initialize with defaults
+bool config_load(Config * config, const char* filename) {
+	config_init(config);  // Initialize with defaults
 
-		FILE* file = fopen(filename, "r");
-		if (!file) {
-			// Create default config file if it doesn't exist
-			file = fopen(filename, "w");
-			if (!file) return false;
-			fprintf(file, "%s", DEFAULT_CONFIG_CONTENT);
-			fclose(file);
-			return true;
-		}
-
-		char line[1024];
-		while (fgets(line, sizeof(line), file)) {
-			if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
-			parse_line(config, line);
-		}
+	FILE* file = fopen(filename, "r");
+	if (!file) {
+		// Create default config file if it doesn't exist
+		file = fopen(filename, "w");
+		if (!file) return false;
+		fprintf(file, "%s", DEFAULT_CONFIG_CONTENT);
 		fclose(file);
 		return true;
 	}
 
-// Helper function for quoted paths
-	const char* config_get_quoted_path(const char* path, char* buffer,
-	                                   size_t buffer_size) {
-		if (path[0] == '"') {
-			strncpy(buffer, path, buffer_size - 1);
-			buffer[buffer_size - 1] = '\0';
-		} else {
-			snprintf(buffer, buffer_size, "\"%s\"", path);
-		}
-		return buffer;
+	char line[1024];
+	while (fgets(line, sizeof(line), file)) {
+		if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
+		parse_line(config, line);
 	}
+	fclose(file);
+	return true;
+}
+
+// Helper function for quoted paths
+const char* config_get_quoted_path(const char* path, char* buffer,
+                                   size_t buffer_size) {
+	if (path[0] == '"') {
+		strncpy(buffer, path, buffer_size - 1);
+		buffer[buffer_size - 1] = '\0';
+	} else {
+		snprintf(buffer, buffer_size, "\"%s\"", path);
+	}
+	return buffer;
+}

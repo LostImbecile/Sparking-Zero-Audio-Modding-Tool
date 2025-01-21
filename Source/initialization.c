@@ -14,7 +14,6 @@ char unrealpak_exe_path[MAX_PATH] = {0};
 char vgmstream_path[MAX_PATH] = {0};
 char bgm_tool_path[MAX_PATH] = {0};
 char metadata_tool_path[MAX_PATH] = {0};
-int csv_loaded = 0;
 Config config;
 
 static int initialize_tool_paths(void) {
@@ -67,15 +66,6 @@ char* get_program_file_path(const char* filename, char* buffer,
 	return buffer;
 }
 
-void load_csv(void) {
-	char keys_path[MAX_PATH];
-	get_program_file_path("keys.csv", keys_path, sizeof(keys_path));
-	csv_loaded = read_csv(keys_path);
-	if (!csv_loaded) {
-		fprintf(stderr, "Note: Failed to load keys.csv from program directory.\n");
-	}
-}
-
 int initialise_program(const char* program_path) {
 	// Set program directory
 	strncpy(program_directory, program_path, MAX_PATH - 1);
@@ -109,9 +99,6 @@ int initialise_program(const char* program_path) {
 		        "If you're sure it's correct, then it might have special characters that my tool does not support\n");
 		return 1;
 	}
-
-	// Load CSV data
-	load_csv();
 
 	return 0;
 }

@@ -4,6 +4,7 @@
 #include "uasset_injector.h"
 #include "utoc_generator.h"
 #include "pak_generator.h"
+#include "add_metadata.h"
 #include <stdio.h>
 
 static bool folder_processed = false;
@@ -46,6 +47,9 @@ int pack_files(const char* foldername) {
 		printf("Error during WAV to HCA conversion\n");
 		return -1;
 	}
+
+	rename_files_back(foldername);
+
 
 	// Step 3: Run ACBEditor on the folder
 	int acb_result = run_acb_editor_pack(foldername);
@@ -96,9 +100,6 @@ int generate_mod_packages(const char* foldername) {
 
 	return 0;
 }
-
-#include <stdio.h>
-#include <string.h>
 
 const char* get_mod_name() {
 	static char mod_name[MAX_PATH] =

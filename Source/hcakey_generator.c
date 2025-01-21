@@ -1,129 +1,98 @@
 #include "hcakey_generator.h"
-#include <ctype.h>
+#include <stdio.h>
 #include <sys/stat.h>
 
-KeyEntry keyEntries[MAX_ENTRIES];
-int numEntries = 0;
+// Writes a 64-bit key to .hcakey file in the specified folder
+static void write_binary_key(uint64_t key, const char* folder) {
+    char hcakey_path[MAX_PATH];
+    snprintf(hcakey_path, sizeof(hcakey_path), "%s\\.hcakey", folder);
 
-int read_csv(const char* full_path) {
-	FILE* file = fopen(full_path, "r");
-	if (!file) {
-		return 0;
-	}
-
-	char line[MAX_FILENAME + MAX_KEY_LENGTH];
-	while (fgets(line, sizeof(line), file) && numEntries < MAX_ENTRIES) {
-		char* filename = strtok(line, ",");
-		char* key = strtok(NULL, "\n");
-		if (filename && key) {
-			remove_suffix(filename);
-			strncpy(keyEntries[numEntries].filename, filename, MAX_FILENAME - 1);
-			strncpy(keyEntries[numEntries].key, key, MAX_KEY_LENGTH - 1);
-			numEntries++;
-		}
-	}
-	fclose(file);
-	return 1;
-}
-
-void remove_suffix(char* filename) {
-    char* underscore = strrchr(filename, '_');
-    if (underscore) {
-        // Check if there's any digit after underscore
-        char* after = underscore + 1;
-        while (*after) {
-            if (isdigit(*after)) {
-                return;  // Found a digit, keep the suffix
-            }
-            after++;
-        }
-
-        // No digits found, proceed with original suffix removal logic
-        if (strlen(underscore) <= 3 && (isupper(underscore[1])
-                                      || isdigit(underscore[1]))) {
-            *underscore = '\0';
-        } else if (strlen(underscore) > 3 && underscore[1] == '*'
-                   && isupper(underscore[2])) {
-            *underscore = '\0';
-        }
+    FILE* file = fopen(hcakey_path, "wb");
+    if (!file) {
+        perror("Error creating .hcakey file");
+        return;
     }
+
+    // Write key in big-endian format
+    for (int i = 7; i >= 0; i--) {
+        uint8_t byte = (key >> (i * 8)) & 0xFF;
+        fwrite(&byte, 1, 1, file);
+    }
+    fclose(file);
 }
 
-const char* find_key(const char* filename) {
-	char base_filename[MAX_FILENAME];
-	strncpy(base_filename, filename, MAX_FILENAME - 1);
-	base_filename[MAX_FILENAME - 1] = '\0';
-
-	// Remove extension
-	char* dot = strrchr(base_filename, '.');
-	if (dot) *dot = '\0';
-
-	remove_suffix(base_filename);
-
-	for (int i = 0; i < numEntries; i++) {
-		char csv_filename[MAX_FILENAME];
-		strncpy(csv_filename, keyEntries[i].filename, MAX_FILENAME - 1);
-		csv_filename[MAX_FILENAME - 1] = '\0';
-
-		if (strstr(base_filename, csv_filename) != NULL) {
-			return keyEntries[i].key;
-		}
-	}
-	return NULL;
-}
-
-void write_binary_key(const char* key, const char* folder) {
-	char hcakey_path[MAX_PATH];
-	snprintf(hcakey_path, sizeof(hcakey_path), "%s\\.hcakey", folder);
-
-	FILE* file = fopen(hcakey_path, "wb");
-	if (!file) {
-		perror("Error creating .hcakey file");
-		return;
-	}
-
-	uint64_t binary_key = strtoull(key, NULL, 10);
-
-	for (int i = 7; i >= 0; i--) {
-		uint8_t byte = (binary_key >> (i * 8)) & 0xFF;
-		fwrite(&byte, 1, 1, file);
-	}
-
-	fclose(file);
-}
-
+// Generates .hcakey in a folder named after the input file
 void generate_hcakey(const char* filepath) {
-	const char* filename = get_basename(filepath);
-	const char* directory = get_parent_directory(filepath);
-	char folder_name[MAX_PATH];
-	snprintf(folder_name, sizeof(folder_name), "%s\\%.*s", directory,
-	         (int)(strrchr(filename, '.') - filename), filename);
-	generate_hcakey_dir(filepath, folder_name);
+    const char* filename = get_basename(filepath);
+    const char* directory = get_parent_directory(filepath);
+
+    // Create folder name from input file (without extension)
+    char folder_name[MAX_PATH];
+    snprintf(folder_name, sizeof(folder_name), "%s\\%.*s",
+             directory,
+             (int)(strrchr(filename, '.') - filename),
+             filename);
+
+    // Generate .hcakey in the new folder
+    generate_hcakey_dir(filepath, folder_name);
 }
 
+// Generates .hcakey in the specified directory
 void generate_hcakey_dir(const char* filepath, const char* directory) {
-	if (!csv_loaded) {
-		fprintf(stderr, "\"keys.csv\" not found. Cannot generate .hcakey.\n");
-		return; // Stop if the CSV couldn't be loaded.
-	}
+    // Extract key from the file
+    uint64_t key = get_key(filepath);
+    if (key == (uint64_t)-1) {
+        fprintf(stderr, "Failed to extract key for: %s\n", filepath);
+        return;
+    }
 
-	const char* filename = get_basename(filepath);
+    // Create output directory if it doesn't exist
+    mkdir(directory);
 
-	const char* key = find_key(filename);
+    // Write the key to .hcakey
+    write_binary_key(key, directory);
+    printf("Generated .hcakey for %s\n", get_basename(filepath));
+}
 
-	if (key) {
-		// Construct the output path using the specified directory
-		char folder_name[MAX_PATH];
-		snprintf(folder_name, sizeof(folder_name), "%s", directory);
+static const uint64_t MAIN_KEY = 13238534807163085345ULL;
 
-		// Ensure the specified directory exists
-		mkdir(folder_name);
+uint64_t get_key(const char *filepath) {
+    FILE *file = fopen(replace_extension(filepath,"awb"), "rb");
+    if (!file) return -1;
 
-		// Write the key file in the specified directory
-		write_binary_key(key, folder_name);
-		printf("Generated .hcakey file for %s in Folder: %s\n", filename,
-		       extract_name_from_path(folder_name));
-	} else {
-		fprintf(stderr, "No key found for %s\n", filename);
-	}
+    // Verify AFS2 header
+    unsigned char header[4];
+    if (fread(header, 1, 4, file) != 4) {
+        fclose(file);
+        return -1;
+    }
+
+    if (header[0] != 0x41 || header[1] != 0x46 ||
+        header[2] != 0x53 || header[3] != 0x32) {
+        fclose(file);
+        return -1;
+    }
+
+    // Read AwbHash from 0x0E
+    if (fseek(file, 0x0E, SEEK_SET) != 0) {
+        fclose(file);
+        return -1;
+    }
+
+    unsigned char awb_hash_bytes[2];
+    if (fread(awb_hash_bytes, 1, 2, file) != 2) {
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+
+    // Convert to little-endian ushort
+    uint16_t awb_hash = (uint16_t)(awb_hash_bytes[1] << 8) | awb_hash_bytes[0];
+
+    // Calculate key
+    return MAIN_KEY * (
+        ((uint64_t)awb_hash << 16) |
+        (uint16_t)(~awb_hash + 2)
+    );
 }

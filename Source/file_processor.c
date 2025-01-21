@@ -8,14 +8,14 @@
 #include <string.h>
 
 int process_input(const char* input) {
-	if (strstr(input, "bgm") || strstr(input, "BGM")) {
+    const char* ext = get_file_extension(input);
+	if (strcasecmp(ext, "pak") != 0 && (strstr(input, "bgm") != NULL || strstr(input, "BGM") != NULL)  ) {
 		return process_bgm_input(input);
 	}
 	if (is_directory(input)) {
 		return process_directory(input);
 	}
 
-	const char* ext = get_file_extension(input);
 	if (ext == NULL) {
 		printf("Invalid file: %s\n", extract_name_from_path(input));
 		return 1;
