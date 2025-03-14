@@ -13,6 +13,7 @@ typedef struct {
     bool Generate_Paks_And_Utocs;
     bool Fixed_Size_BGM;
     bool Use_Cue_Names;
+    bool Dont_Use_Numbers;
     char Game_Directory[MAX_PATH];
 } Config;
 

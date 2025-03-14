@@ -66,7 +66,7 @@ int extract_and_process(const char* input_file) {
 	if (run_acb_editor(acb_path) != 0) {
 		return 1;
 	}
-// Get folder path
+    // Get folder path
     char folder_path[MAX_PATH];
     strcpy(folder_path, get_parent_directory(input_file));
     strcat(folder_path, "\\");
@@ -89,6 +89,9 @@ int extract_and_process(const char* input_file) {
             printf("Error extracting HCAs from %s\n", extract_name_from_path(get_basename(input_file)));
         }
     } else if (config.Use_Cue_Names) {
+        // For files that need it
+        generate_txtm(input_file);
+
         // If HCA conversion is disabled but Use_Cue_Names is enabled, rename HCAs
         if (rename_hcas(input_file) != 0) {
             fprintf(stderr, "Error generating HCA rename batch file.\n");

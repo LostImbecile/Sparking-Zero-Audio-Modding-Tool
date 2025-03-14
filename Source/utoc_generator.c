@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <dirent.h>
 
 static int verify_utoc_generation(const char* game_dir, const char* mod_name) {
     char file_path[MAX_PATH];
@@ -52,47 +53,110 @@ static int copy_oo2core() {
     }
     return 0;
 }
+
 static int check_existing_files(const char* game_dir, const char* mod_name) {
-	char file_path[MAX_PATH];
-	const char* extensions[] = {".utoc", ".pak", ".ucas"};
-	int files_exist = 0;
+    char mods_path[MAX_PATH];
+    char file_path[MAX_PATH];
+    const char* extensions[] = {".utoc", ".pak", ".ucas"};
+    int files_exist = 0;
+    DIR* dir;
+    struct dirent* entry;
 
-	// Check each file type
-	for (int i = 0; i < 3; i++) {
-		snprintf(file_path, MAX_PATH, "%s\\~mods\\%s%s", game_dir, mod_name,
-		         extensions[i]);
-		FILE* file = fopen(file_path, "r");
-		if (file != NULL) {
-			fclose(file);
-			files_exist = 1;
-			printf("Found existing file: %s\n", file_path);
-		}
-	}
 
-	// If files exist, ask user for permission to delete
-	if (files_exist) {
-		char response;
-		printf("Existing mod files found. Delete them? (y/n): ");
-		scanf(" %c", &response);
+    char mod_name_clean[MAX_PATH];
+    strncpy(mod_name_clean, mod_name, MAX_PATH - 1);
+    mod_name_clean[MAX_PATH - 1] = '\0';
+    size_t mod_len = strlen(mod_name_clean);
 
-		if (tolower(response) == 'y') {
-			// Delete each file type
-			for (int i = 0; i < 3; i++) {
-				snprintf(file_path, MAX_PATH, "%s\\~mods\\%s%s", game_dir, mod_name,
-				         extensions[i]);
-				if (remove(file_path) != 0) {
-					printf("Warning: Failed to delete %s\n", file_path);
-				}
-			}
-			printf("\n");
-		} else {
-			printf("Operation cancelled by user.\n");
-			getchar();
-			return 1;
-		}
-	}
+    // Remove _p if present
+    if (mod_len > 2 && strcasecmp(mod_name_clean + mod_len - 2, "_p") == 0) {
+        mod_name_clean[mod_len - 2] = '\0';
+    }
 
-	return 0;
+    snprintf(mods_path, MAX_PATH, "%s\\~mods", game_dir);
+
+    dir = opendir(mods_path);
+    if (dir == NULL) {
+        printf("Could not open mods directory.\n");
+        return 1;
+    }
+
+    // Read all files in mods folder
+    while ((entry = readdir(dir)) != NULL) {
+        char* dot_pos = strrchr(entry->d_name, '.');
+        if (!dot_pos) continue;
+
+        size_t name_len = dot_pos - entry->d_name;
+        char filename[MAX_PATH];
+        strncpy(filename, entry->d_name, name_len);
+        filename[name_len] = '\0';
+
+        size_t file_len = strlen(filename);
+        // Remove _p from name (just in case)
+        if (file_len > 2 && strcasecmp(filename + file_len - 2, "_p") == 0) {
+            filename[file_len - 2] = '\0';
+        }
+
+        // Check if any mod of the same name more or less exists
+        if (strcasecmp(filename, mod_name_clean) == 0) {
+            for (int i = 0; i < 3; i++) {
+                if (strcasecmp(dot_pos, extensions[i]) == 0) {
+                    files_exist = 1;
+                    snprintf(file_path, MAX_PATH, "%s\\~mods\\%s", game_dir, entry->d_name);
+                    printf("Found existing file: %s\n", file_path);
+                    break;
+                }
+            }
+        }
+    }
+    closedir(dir);
+
+    // Ask user to delete or keep
+    if (files_exist) {
+        char response;
+        printf("Existing mod files found. Delete them? (y/n): ");
+        scanf(" %c", &response);
+
+        if (tolower(response) == 'y') {
+            dir = opendir(mods_path);
+            if (dir != NULL) {
+                while ((entry = readdir(dir)) != NULL) {
+                    char* dot_pos = strrchr(entry->d_name, '.');
+                    if (!dot_pos) continue;
+
+                    size_t name_len = dot_pos - entry->d_name;
+                    char filename[MAX_PATH];
+                    strncpy(filename, entry->d_name, name_len);
+                    filename[name_len] = '\0';
+
+                    size_t file_len = strlen(filename);
+                    if (file_len > 2 && strcasecmp(filename + file_len - 2, "_p") == 0) {
+                        filename[file_len - 2] = '\0';
+                    }
+
+                    if (strcasecmp(filename, mod_name_clean) == 0) {
+                        for (int i = 0; i < 3; i++) {
+                            if (strcasecmp(dot_pos, extensions[i]) == 0) {
+                                snprintf(file_path, MAX_PATH, "%s/~mods/%s", game_dir, entry->d_name);
+                                if (remove(file_path) != 0) {
+                                    printf("Warning: Failed to delete %s\n", file_path);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                closedir(dir);
+                printf("\n");
+            }
+        } else {
+            printf("Operation cancelled by user.\n");
+            getchar();
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 static void cleanup(const char* folder) {
@@ -209,6 +273,11 @@ int utoc_package_and_cleanup(const char* mod_name) {
 		strcpy(game_dir,get_parent_directory(config.Game_Directory));
 	} else
 		strcpy(game_dir,config.Game_Directory);
+
+	// Second check for cases where mod name wasn't given when structure was created
+    if (check_existing_files(config.Game_Directory, mod_name) != 0) {
+		return 1;
+	}
 
     copy_oo2core();
 

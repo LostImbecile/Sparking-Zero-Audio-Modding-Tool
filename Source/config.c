@@ -22,9 +22,11 @@
 "# Use this if you care about Menu music, but you might have to reduce your HCA's size\n" \
 "Fixed_Size_BGM=false\n\n" \
 "# Renames \"XXXXX_streaming\" files into their CueName, then back to XXXXX_streaming on packaging\n" \
+"# With \"Dont_Use_Numbers\", the CueName if not null/a duplicate will be used on its own, else, the format will be like below\n" \
 "# Format: \"Cue_N - CueName1;CueName2;etc...\" Where N is the number of the file, needed for repackaging\n" \
 "# You can name your file 'Cue_N' and it'll still replace it correctly, no need to type the entire name\n" \
-"Use_Cue_Names=false\n\n"
+"Use_Cue_Names=false\n" \
+"Dont_Use_Numbers=true\n\n"
 
 // Initialize config with default values
 void config_init(Config* config) {
@@ -33,6 +35,7 @@ void config_init(Config* config) {
 	config->Generate_Paks_And_Utocs = true;
 	config->Fixed_Size_BGM = false;
 	config->Use_Cue_Names = false;
+	config->Dont_Use_Numbers = true;
 	strcpy(config->Game_Directory,
 	       "C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks");
 }
@@ -81,6 +84,8 @@ static void parse_line(Config* config, char* line) {
 		config->Fixed_Size_BGM = (strcasecmp(value, "true") == 0);
 	} else if (strcmp(key_lower, "use_cue_names") == 0) {
 		config->Use_Cue_Names = (strcasecmp(value, "true") == 0);
+	} else if (strcmp(key_lower, "dont_use_numbers") == 0) {
+		config->Dont_Use_Numbers = (strcasecmp(value, "true") == 0);
 	}
 }
 

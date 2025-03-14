@@ -4,6 +4,7 @@
 #include "track_info_utils.h"
 #include "utils.h"
 #include "config.h"
+#include "file_mapping.h"
 
 extern char metadata_tool_path[];
 extern Config config;
@@ -15,6 +16,9 @@ extern Config config;
  * @return 0 on success, non-zero on failure.
  */
 int add_metadata(const char* input_file);
+
+char* generate_file_name(const char* sanitized_name, int original_num, const char* extension,
+                        FileMappingList* mapping, int config_dont_use_numbers);
 
 void rename_files_back(const char* foldername);
 int rename_hcas(const char* input_file);

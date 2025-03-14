@@ -84,9 +84,7 @@ int process_bgm_directory(const char* dir_path) {
 
 	if (strcmp(dir_basename, "bgm_DLC_01") == 0)      bgm_index = 2;
 	else if (strcmp(dir_basename, "bgm_DLC_02") == 0) bgm_index = 3;
-	else bgm_index =
-		    0; // Default to bgm_main
-
+	else bgm_index = 0; // Default to bgm_main
 
 	uint64_t hca_key_to_use = 0;
 
@@ -105,7 +103,6 @@ int process_bgm_directory(const char* dir_path) {
 				uint64_t key = get_key(bgm_files[i].awb_path);
 				if (key != (uint64_t) -1) {
 					bgm_files[i].hca_key = key;
-
 					if (hca_key_to_use == 0) hca_key_to_use = bgm_files[i].hca_key;
 				} else {
 					printf("Error: Could not find HCA key for %s\n", bgm_files[i].awb_path);
@@ -135,7 +132,6 @@ int process_bgm_directory(const char* dir_path) {
 	if (encryption_successes > 0) printf("%d HCAs were encrypted\n",
 		                                     encryption_successes);
 
-	// In case the option was on
 	rename_files_back(dir_path);
 
 	// Prepare bgm_tool arguments
@@ -163,15 +159,18 @@ int process_bgm_directory(const char* dir_path) {
 		const char* mod_name = get_mod_name();
 		bool any_modified = false;
 
+		// Check for modified files
 		for (int i = 0; i < num_bgm_files; ++i) {
 			if ((bgm_index == 0 && (i == 0 || i == 1)) || (bgm_index > 0
 			        && i == bgm_index)) {
-				if (bgm_files[i].awb_exists
-				&& get_last_mod_time(bgm_files[i].awb_path, &(time_t) {
-				0
-			}) == 0 && bgm_files[i].initial_mod_time_awb != 0) {
-					any_modified = true;
-					printf("Note: %s was modified and will be packed.\n", bgm_files[i].awb_path);
+				if (bgm_files[i].awb_exists) {
+					time_t current_mod_time;
+					if (get_last_mod_time(bgm_files[i].awb_path, &current_mod_time) == 0) {
+						if (current_mod_time != bgm_files[i].initial_mod_time_awb) {
+							any_modified = true;
+							printf("Note: %s was modified and will be packed.\n", extract_name_from_path(bgm_files[i].awb_path));
+						}
+					}
 				}
 			}
 		}
@@ -181,28 +180,33 @@ int process_bgm_directory(const char* dir_path) {
 			return 0;
 		}
 
-		// Generate utoc
+		// Generate utoc for each modified file
 		int utoc_result = -1;
-		if (bgm_index == 0) utoc_result = utoc_generate(
-			                                      bgm_files[0].uasset_path, mod_name);
-		else utoc_result = utoc_generate(bgm_files[bgm_index].uasset_path,
-			                                 mod_name);
+		if (bgm_index == 0)
+			utoc_result = utoc_generate(bgm_files[0].uasset_path, mod_name);
+		else
+			utoc_result = utoc_generate(bgm_files[bgm_index].uasset_path, mod_name);
 
-		if (utoc_result != 0) return -1;
+		if (utoc_result != 0)
+			return -1;
 
-		// Create pak structure
+		// Create pak structure for modified files
 		for (int i = 0; i < num_bgm_files; ++i) {
 			if ((bgm_index == 0 && (i == 0 || i == 1)) || (bgm_index > 0
 			        && i == bgm_index)) {
-				if (bgm_files[i].awb_exists && bgm_files[i].initial_mod_time_awb != 0) {
-					if (pak_create_structure(bgm_files[i].awb_path, "temp_pak") != 0) return -1;
+				if (bgm_files[i].awb_exists) {
+					time_t current_mod_time;
+					if (get_last_mod_time(bgm_files[i].awb_path, &current_mod_time) == 0 &&
+					        current_mod_time != bgm_files[i].initial_mod_time_awb) {
+						if (pak_create_structure(bgm_files[i].awb_path, "temp_pak") != 0) return -1;
+					}
 				}
 			}
 		}
 
-		// Rename and package
 		if (rename_temp_folder("temp_pak", mod_name) != 0
-		        || pak_package_and_cleanup(mod_name) != 0) return -1;
+		        || pak_package_and_cleanup(mod_name) != 0)
+			return -1;
 	}
 
 	return 0;
