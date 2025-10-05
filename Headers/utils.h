@@ -9,7 +9,6 @@
 
 #define MAX_PATH 256
 
-void press_enter_to_exit();
 const char* extract_name_from_path(const char* path);
 int create_directory_recursive(const char* path);
 int create_directory(const char* path);
@@ -22,5 +21,8 @@ const char* replace_extension(const char* filename, const char* new_extension);
 int remove_directory_recursive(const char* path);
 int is_path_exists(const char *path);
 const char* sanitize_path(const char* path);
+void pause_for_user(bool is_cmd_mode, const char* message);
+void clear_stdin_buffer(bool is_cmd_mode);
+
 
 #endif // UTILS_H_INCLUDED

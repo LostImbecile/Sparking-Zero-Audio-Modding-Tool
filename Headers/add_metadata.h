@@ -5,9 +5,7 @@
 #include "utils.h"
 #include "config.h"
 #include "file_mapping.h"
-
-extern char metadata_tool_path[];
-extern Config config;
+#include "initialization.h"
 
 /**
  * @brief Creates a batch file that adds metadata to extracted audio files.

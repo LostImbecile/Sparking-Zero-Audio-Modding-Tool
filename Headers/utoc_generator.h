@@ -4,10 +4,7 @@
 #include "config.h"
 #include "utils.h"
 
-
-extern char unrealrezen_path[];
-extern char program_directory[];
-extern Config config;
+#include "initialization.h"
 
 // Generate UTOC and folder structure for the given file
 int utoc_generate(const char* file_path, const char* mod_name);

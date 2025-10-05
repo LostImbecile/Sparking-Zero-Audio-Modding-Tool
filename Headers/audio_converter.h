@@ -5,9 +5,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include "utils.h"
-
-extern char vgaudio_cli_path[];
-extern char vgmstream_path[];
+#include "initialization.h"
 
 // Extract HCA key from the .hcakey file in the given folder
 uint64_t extract_hca_key(const char* folder);

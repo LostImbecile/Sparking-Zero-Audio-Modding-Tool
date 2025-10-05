@@ -20,7 +20,7 @@ int process_and_package_folders(char** filtered_argv, int argc) {
 	}
 
 	// If folders were processed and we're creating a combined mod, handle packaging
-	if (was_folder_processed() && !config.Create_Separate_Mods) {
+	if (was_folder_processed() && !app_data.config.Create_Separate_Mods) {
 		// Package all processed folders into one mod
 		const char* mod_name = get_mod_name();
 		if (package_combined_mod(mod_name) != 0) {
@@ -59,12 +59,22 @@ int main(int argc, char* argv[]) {
 		printf("\nLatest Downloads:\n");
 		printf("- https://gamebanana.com/tools/18312\n");
 		printf("- https://github.com/Lostlmbecile/Sparking-Zero-Audio-Modding-Tool/releases/latest\n");
+		printf("\nNote: if running in scripts, pass --cmd to avoid hangs.");
+		printf("\nAbsolute paths to call the tool are preferred.");
 
 		printf("\nPress Enter to exit...");
 		getchar();
 		return 1;
 	}
 
+	// Parse flags
+	bool is_cmd_mode = false;
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--cmd") == 0) {
+			is_cmd_mode = true;
+			break; // remove the break if you want to add more
+		}
+	}
 
 	char program_location[MAX_PATH] = {0};
 	if (strstr(argv[0], ":") == NULL) {
@@ -84,30 +94,32 @@ int main(int argc, char* argv[]) {
 	strcpy(program_location, sanitize_path(program_location));
 
 	if (!is_path_exists(program_location)) {
-		fprintf(stderr, "You have special characters in your path that my tool can't support!\n"\
+		fprintf(stderr,
+		        "You have special characters in your path that my tool can't support!\n"\
 		        "Move it to a folder with only English/ASCII characters.\n");
-		printf("Press Enter to exit...");
-		getchar();
+		pause_for_user(is_cmd_mode, "Press Enter to exit...");
 
 		return 1;
 	}
 
 	// Initialise everything
 	if (initialise_program(program_location) != 0) {
-		printf("Initialization failed. Press Enter to exit...");
-		getchar();
+		pause_for_user(is_cmd_mode, "Initialisation failed. Press Enter to exit...");
 		return 1;
 	}
+
+	// set global
+	app_data.is_cmd_mode = is_cmd_mode;
+
 
 	// Process arguments
 	char** filtered_argv = preprocess_argv(&argc, argv);
 	process_files(filtered_argv, argc);
 	process_and_package_folders(filtered_argv, argc);
 
-	printf("\nAlways be sure to use the right version of keys.csv and re-export from Fmodel on a game update\nFor more info, check the readme in the keys directory.\n\n");
 	// Clean up
 	free_filtered_argv(filtered_argv);
-	printf("Processing complete. Press Enter to exit...");
-	getchar();
+	pause_for_user(app_data.is_cmd_mode,
+	               "Processing complete. Press Enter to exit...");
 	return 0;
 }

@@ -105,7 +105,8 @@ marker_found:
 
 	// Zero out remaining space after ACB content
 	const char zero_buffer[BUFFER_SIZE] = {0};
-	long remaining_size = uasset_size - (utf_pos + total_written);
+	// the 4 extra bytes are for unreal engine and should be left alone
+	long remaining_size = uasset_size - (utf_pos + total_written + 4);
 
 	while (remaining_size > 0) {
 		size_t to_write = (remaining_size > BUFFER_SIZE) ? BUFFER_SIZE :
@@ -119,7 +120,7 @@ marker_found:
 	printf("Successfully injected .acb into %s (replaced %lu bytes and zeroed %lu remaining bytes)\n",
 	       extract_name_from_path(uasset_path),
 	       (unsigned long)total_written,
-	       (unsigned long)(uasset_size - (utf_pos + total_written)));
+	       (unsigned long)(uasset_size - (utf_pos + total_written + 4)));
 
 	return 0;
 }

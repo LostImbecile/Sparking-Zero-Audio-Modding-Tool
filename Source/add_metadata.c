@@ -146,7 +146,7 @@ int add_metadata(const char* input_file) {
 
 	// Load or create mapping if needed
 	FileMappingList* mapping = NULL;
-	if (config.Dont_Use_Numbers) {
+	if (app_data.config.Dont_Use_Numbers) {
 		mapping = load_file_mapping(folder_path);
 		if (!mapping) {
 			fprintf(stderr, "Error: Could not create/load file mapping\n");
@@ -219,12 +219,12 @@ int add_metadata(const char* input_file) {
 				// Write the command to the batch file
 				fprintf(metadata_batch_file,
 				        "\"%s\" \"%s\" \"Cue: %s\" \"%s\" \"CueID: %s\" \"%s\" \"%d\"\n",
-				        metadata_tool_path, wav_file_path, // Now with .wav extension
+				        app_data.metadata_tool_path, wav_file_path, // Now with .wav extension
 				        streamData.records[fileindex].stream_name, extract_name_from_path(awb_path),
 				        streamData.records[fileindex].cue_id, genre, fileindex + 1);
 
 				// Add rename command if Use_Cue_Names is enabled
-				if (config.Use_Cue_Names) {
+				if (app_data.config.Use_Cue_Names) {
 					const char* cue_name = streamData.records[fileindex].stream_name;
 					if (!cue_name || strlen(cue_name) == 0) {
 						cue_name = "null";
@@ -233,13 +233,13 @@ int add_metadata(const char* input_file) {
 					sanitize_filename(cue_name, sanitized_name);
 
 					// Add to mapping if using numbers-free mode
-					if (config.Dont_Use_Numbers) {
+					if (app_data.config.Dont_Use_Numbers) {
 						add_file_mapping(mapping, original_num, sanitized_name);
 					}
 
 					// Generate new name using helper function
 					const char* new_name = generate_file_name(sanitized_name, original_num,
-					                       ".wav", mapping, config.Dont_Use_Numbers);
+					                       ".wav", mapping, app_data.config.Dont_Use_Numbers);
 
 					// Write rename command to batch file
 					fprintf(metadata_batch_file, "ren \"%s\" \"%s\"\n", wav_file_path, new_name);
@@ -257,7 +257,7 @@ int add_metadata(const char* input_file) {
 	}
 
 	// Save mapping if needed
-	if (config.Dont_Use_Numbers && mapping) {
+	if (app_data.config.Dont_Use_Numbers && mapping) {
 		save_file_mapping(folder_path, mapping);
 		free_file_mapping(mapping);
 	}
@@ -316,7 +316,7 @@ int rename_hcas(const char* input_file) {
 
 	// Load or create mapping if needed
 	FileMappingList* mapping = NULL;
-	if (config.Dont_Use_Numbers) {
+	if (app_data.config.Dont_Use_Numbers) {
 		mapping = load_file_mapping(folder_path);
 		if (!mapping) {
 			fprintf(stderr, "Error: Could not create/load file mapping\n");
@@ -363,13 +363,13 @@ int rename_hcas(const char* input_file) {
 				sanitize_filename(cue_name, sanitized_name);
 
 				// Add to mapping if using numbers-free mode
-				if (config.Dont_Use_Numbers) {
+				if (app_data.config.Dont_Use_Numbers) {
 					add_file_mapping(mapping, original_num, sanitized_name);
 				}
 
 				// Generate new name using helper function
 				const char* new_name = generate_file_name(sanitized_name, original_num,
-				                       ".hca", mapping, config.Dont_Use_Numbers);
+				                       ".hca", mapping, app_data.config.Dont_Use_Numbers);
 
 				// Write rename command to batch file
 				fprintf(batch_file, "ren \"%s\\%s\" \"%s\"\n",
@@ -387,7 +387,7 @@ int rename_hcas(const char* input_file) {
 	}
 
 	// Save mapping if needed
-	if (config.Dont_Use_Numbers && mapping) {
+	if (app_data.config.Dont_Use_Numbers && mapping) {
 		save_file_mapping(folder_path, mapping);
 		free_file_mapping(mapping);
 	}

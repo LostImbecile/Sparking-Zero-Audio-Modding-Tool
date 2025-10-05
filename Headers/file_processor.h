@@ -8,7 +8,7 @@
 
 #define MAX_FILES 1000
 
-extern char unrealpak_exe_path[];
+#include "initialization.h"
 
 int process_input(const char* input);
 int process_directory(const char* dir_path);

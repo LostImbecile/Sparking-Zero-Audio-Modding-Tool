@@ -7,8 +7,7 @@
 #include "config.h"
 #include "utils.h"
 
-extern char acb_editor_path[];
-extern Config config;
+#include "initialization.h"
 
 /**
  * @brief Finds the corresponding .acb file for a given input file

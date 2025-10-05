@@ -3,9 +3,27 @@
 #include <libgen.h>
 #include <errno.h>
 
-void press_enter_to_exit() {
-	printf("Press Enter to exit...");
-	getchar();
+void clear_stdin_buffer(bool is_cmd_mode) {
+    if (is_cmd_mode) {
+        return;
+    }
+
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        // reads and discards characters until it finds
+        // a newline or the end of the input stream
+    }
+}
+
+void pause_for_user(bool is_cmd_mode, const char* message) {
+    if (is_cmd_mode) {
+        return;
+    }
+
+    printf("%s", message);
+
+    clear_stdin_buffer(is_cmd_mode);
+    getchar();
 }
 
 bool is_directory(const char* path) {

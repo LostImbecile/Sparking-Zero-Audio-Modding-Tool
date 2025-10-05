@@ -3,11 +3,7 @@
 #define PAK_GENERATOR_H
 #include "config.h"
 #include "utils.h"
-
-extern char unrealpak_path[];
-extern char unrealpak_path_no_compression[];
-extern char program_directory[];
-extern Config config;
+#include "initialization.h"
 
 // Generate PAK and folder structure for the given file
 int pak_generate(const char* file_path, const char* mod_name);

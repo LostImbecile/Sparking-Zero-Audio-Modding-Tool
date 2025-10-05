@@ -46,7 +46,7 @@ int process_pak_file(const char* file_path){
 	// Create unrealpak command
 	snprintf(cmd, sizeof(cmd),
 	         "\"\"%s\" \"%s\" -extract \"%s\\%s\"\"",
-	         unrealpak_exe_path, file_path, get_parent_directory(file_path), base_name);
+	         app_data.unrealpak_exe_path, file_path, get_parent_directory(file_path), base_name);
 
     free(base_name);
 	// Execute the command

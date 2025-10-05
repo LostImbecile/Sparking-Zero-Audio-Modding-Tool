@@ -4,10 +4,7 @@
 
 #include <stdbool.h>
 #include "config.h"
-
-extern char acb_editor_path[];
-extern Config config;
-extern char program_directory[];
+#include "initialization.h"
 
 bool was_folder_processed(void);
 

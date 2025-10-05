@@ -18,8 +18,8 @@ static int rename_temp_folder(const char* temp_name, const char* mod_name) {
 	char new_path[MAX_PATH];
 
 	// Build the full paths using program directory
-	snprintf(old_path, MAX_PATH, "%s%s", program_directory, temp_name);
-	snprintf(new_path, MAX_PATH, "%s%s", program_directory, mod_name);
+	snprintf(old_path, MAX_PATH, "%s%s", app_data.program_directory, temp_name);
+	snprintf(new_path, MAX_PATH, "%s%s", app_data.program_directory, mod_name);
 
 	if (rename(old_path, new_path) != 0) {
 		printf("Error: Failed to rename %s to %s\n", temp_name, mod_name);
@@ -62,7 +62,7 @@ int pack_files(const char* foldername) {
 		return -1;
 	}
 
-	if (config.Generate_Paks_And_Utocs
+	if (app_data.config.Generate_Paks_And_Utocs
 	        && generate_mod_packages(foldername) != 0) {
 		return -1;
 	}
@@ -74,7 +74,7 @@ int generate_mod_packages(const char* foldername) {
 	char uasset_path[MAX_PATH];
 	build_uasset_path(foldername, uasset_path, sizeof(uasset_path));
 
-	if (config.Create_Separate_Mods) {
+	if (app_data.config.Create_Separate_Mods) {
 		const char* mod_name = get_mod_name();
 
 		// Generate utoc & ucas in mods folder
@@ -152,7 +152,7 @@ int package_combined_mod(const char* mod_name) {
 int run_acb_editor_pack(const char* folderpath) {
 	char command[MAX_PATH * 8];
 
-	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"", acb_editor_path,
+	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"", app_data.acb_editor_path,
 	         folderpath);
 
 	int result = system(command);

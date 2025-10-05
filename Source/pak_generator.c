@@ -58,36 +58,41 @@ static int move_to_mods_folder(const char* source_path, const char* mod_name, co
 
 int pak_create_structure(const char* file_path, const char* mod_name) {
 	char full_path[MAX_PATH];
-	char mod_folder[MAX_PATH];
+	char mods_folder[MAX_PATH];
 
 	char lowercase_filename[MAX_PATH];
 	strncpy(lowercase_filename, extract_name_from_path(file_path), MAX_PATH);
 	to_lower(lowercase_filename);
 
-	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
-
 	// Create the CriWareData directory path
 	if (strstr(lowercase_filename, "dlc_01")) {
 		snprintf(full_path, MAX_PATH,
 		         "%s%s\\SparkingZERO\\Plugins\\DLC_AnimeSongsBGMPack1\\Content",
-		         program_directory, mod_name);
+		         app_data.program_directory, mod_name);
 		printf("Creating directory structure: %s\n", strstr(full_path,
 		        "SparkingZERO\\Plugins"));
 	} else if (strstr(lowercase_filename, "dlc_02")) {
 		snprintf(full_path, MAX_PATH,
 		         "%s%s\\SparkingZERO\\Plugins\\DLC_AnimeSongsBGMPack2\\Content",
-		         program_directory, mod_name);
+		         app_data.program_directory, mod_name);
 		printf("Creating directory structure: %s\n", strstr(full_path,
 		        "SparkingZERO\\Plugins"));
 	} else {
 		snprintf(full_path, MAX_PATH, "%s%s\\SparkingZERO\\Content\\CriWareData",
-		         program_directory, mod_name);
+		         app_data.program_directory, mod_name);
 
 		printf("Creating directory structure: %s\n", strstr(full_path,
 		        "SparkingZERO\\Content"));
 	}
 	// Create directory structure
 	if (create_directory_recursive(full_path) != 0) {
+		return 1;
+	}
+
+	// Create mods folder
+	snprintf(mods_folder, MAX_PATH, "%s\\~mods", app_data.config.Game_Directory);
+	if (create_directory(mods_folder) != 0) {
+		printf("Failed to create mods folder: %s\n", mods_folder);
 		return 1;
 	}
 
@@ -107,29 +112,29 @@ int pak_package_and_cleanup(const char* mod_name) {
 	char cmd[MAX_PATH * 8];
 	char pak_path[MAX_PATH];
 	char mod_folder[MAX_PATH];
-	snprintf(mod_folder, MAX_PATH, "%s%s", program_directory, mod_name);
+	snprintf(mod_folder, MAX_PATH, "%s%s", app_data.program_directory, mod_name);
 
 	// Create pak path
-	snprintf(pak_path, MAX_PATH, "%s\\%s.pak", program_directory, mod_name);
+	snprintf(pak_path, MAX_PATH, "%s\\%s.pak", app_data.program_directory, mod_name);
 
 	// Create unrealpak command
 	snprintf(cmd, sizeof(cmd),
 	         "start \"\" /wait cmd /C \"\"%s\" \"%s%s\"\"",
-	         unrealpak_path_no_compression, program_directory, mod_name);
+	         app_data.unrealpak_path_no_compression, app_data.program_directory, mod_name);
 
 	// Execute the command
 	int result = system(cmd);
 	if (result != 0) {
 		printf("Failed to generate PAK.\n");
 		cleanup(mod_folder);
-		getchar();
+		clear_stdin_buffer(app_data.is_cmd_mode);
 		return 1;
 	}
 
 	// Move the generated PAK file to mods folder
-	if (move_to_mods_folder(pak_path, mod_name, config.Game_Directory) != 0) {
+	if (move_to_mods_folder(pak_path, mod_name, app_data.config.Game_Directory) != 0) {
 		cleanup(mod_folder);
-		getchar();
+		clear_stdin_buffer(app_data.is_cmd_mode);
 		return 1;
 	}
 

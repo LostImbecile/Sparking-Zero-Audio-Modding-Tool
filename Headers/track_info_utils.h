@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "utils.h"
-
+#include "initialization.h"
 
 typedef struct {
     char stream_name[100];
@@ -18,8 +18,6 @@ typedef struct {
     StreamInfo* records;
     int num_records;
 } StreamData;
-
-extern char vgmstream_path[];
 
 int generate_txtm(const char* inputfile);
 int run_vgmstream(const char* inputfile, StreamData* data);

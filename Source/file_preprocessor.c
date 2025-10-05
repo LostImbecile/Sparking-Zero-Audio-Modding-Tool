@@ -4,117 +4,122 @@
 #include <stdlib.h>
 
 char** preprocess_argv(int* argc, char* argv[]) {
-    if (argc == NULL || argv == NULL || *argc < 1) {
-        return NULL;
-    }
+	if (argc == NULL || argv == NULL || *argc < 1) {
+		return NULL;
+	}
 
-    FileEntry* entries = calloc(MAX_PATH, sizeof(FileEntry));
-    if (entries == NULL) {
-        return NULL;
-    }
+	FileEntry* entries = calloc(MAX_PATH, sizeof(FileEntry));
+	if (entries == NULL) {
+		return NULL;
+	}
 
-    char** filtered_argv = calloc(MAX_PATH, sizeof(char*));
-    if (filtered_argv == NULL) {
-        free(entries);
-        return NULL;
-    }
+	char** filtered_argv = calloc(MAX_PATH, sizeof(char*));
+	if (filtered_argv == NULL) {
+		free(entries);
+		return NULL;
+	}
 
-    int filtered_count = 0;
+	int filtered_count = 0;
 
-    // First pass: create entries and mark duplicates
-    for (int i = 1; i < *argc && filtered_count < MAX_PATH - 1; i++) {
-        entries[filtered_count].path = strdup(argv[i]);
-        if (entries[filtered_count].path == NULL) {
-            goto cleanup_and_exit;
-        }
+	// Create entries and mark duplicates
+	for (int i = 1; i < *argc && filtered_count < MAX_PATH - 1; i++) {
+		// Skip flags
+		if (strncmp(argv[i], "--", 2) == 0) {
+			continue;
+		}
 
-        entries[filtered_count].is_dir = is_directory(argv[i]);
-        entries[filtered_count].basename = get_basename(argv[i]);
-        if (entries[filtered_count].basename == NULL) {
-            free(entries[filtered_count].path);
-            goto cleanup_and_exit;
-        }
+		entries[filtered_count].path = strdup(argv[i]);
+		if (entries[filtered_count].path == NULL) {
+			goto cleanup_and_exit;
+		}
 
-        entries[filtered_count].keep = true;
+		entries[filtered_count].is_dir = is_directory(argv[i]);
+		entries[filtered_count].basename = get_basename(argv[i]);
+		if (entries[filtered_count].basename == NULL) {
+			free(entries[filtered_count].path);
+			goto cleanup_and_exit;
+		}
 
-        // Check for duplicates
-        for (int j = 0; j < filtered_count; j++) {
-            if (strcmp(entries[j].basename, entries[filtered_count].basename) == 0) {
-                // Duplicate found
-                if (entries[filtered_count].is_dir) {
-                    entries[filtered_count].keep = false;  // Remove duplicate directory
-                } else if (entries[j].is_dir) {
-                    entries[j].keep = false; // Remove the previous directory entry
-                } else {
-                     // Duplicate file, mark current one for removal (for now)
-                    entries[filtered_count].keep = false;
-                    // Prioritization logic will come later
-                }
-                break;
-            }
-        }
-        filtered_count++;
-    }
+		entries[filtered_count].keep = true;
 
-    // Second pass: Apply prioritization within duplicate groups
-    for (int i = 0; i < filtered_count; i++) {
-        if (!entries[i].keep) continue; // Skip already marked for removal
+		// Check for duplicates
+		for (int j = 0; j < filtered_count; j++) {
+			if (strcmp(entries[j].basename, entries[filtered_count].basename) == 0) {
+				// Duplicate found
+				if (entries[filtered_count].is_dir) {
+					entries[filtered_count].keep = false;  // Remove duplicate directory
+				} else if (entries[j].is_dir) {
+					entries[j].keep = false; // Remove the previous directory entry
+				} else {
+					// Duplicate file, mark current one for removal (for now)
+					entries[filtered_count].keep = false;
+				}
+				break;
+			}
+		}
+		filtered_count++;
+	}
 
-        for (int j = i + 1; j < filtered_count; j++) {
-            if (strcmp(entries[i].basename, entries[j].basename) == 0 && !entries[j].keep) {
-                // Found a duplicate group, prioritize .uasset
-                bool is_uasset_i = strstr(entries[i].path, ".uasset") != NULL;
-                bool is_uasset_j = strstr(entries[j].path, ".uasset") != NULL;
+	// Prioritise within duplicate groups
+	for (int i = 0; i < filtered_count; i++) {
+		if (!entries[i].keep) continue; // Skip already marked for removal
 
-                if (is_uasset_j && !is_uasset_i) {
-                    entries[i].keep = false; // Remove non-uasset in favor of uasset
-                    entries[j].keep = true;
-                    i = j; // Start the outer loop from the new kept entry
-                    break;
-                } else if (is_uasset_i && !is_uasset_j) {
-                    // Keep i, remove j (j is already marked as false)
-                    break;
-                }
-                // If both or neither are uasset, keep the first one (i)
-            }
-        }
-    }
+		for (int j = i + 1; j < filtered_count; j++) {
+			if (strcmp(entries[i].basename, entries[j].basename) == 0
+			        && !entries[j].keep) {
+				// Found a duplicate group, prioritize .uasset
+				bool is_uasset_i = strstr(entries[i].path, ".uasset") != NULL;
+				bool is_uasset_j = strstr(entries[j].path, ".uasset") != NULL;
 
-    // Third pass: create filtered argv
-    int new_argc = 1;  // Keep argv[0] (program name)
-    filtered_argv[0] = argv[0];
+				if (is_uasset_j && !is_uasset_i) {
+					entries[i].keep = false; // Remove non-uasset in favor of uasset
+					entries[j].keep = true;
+					i = j; // Start the outer loop from the new kept entry
+					break;
+				} else if (is_uasset_i && !is_uasset_j) {
+					// Keep i, remove j (j is already marked as false)
+					break;
+				}
+				// If both or neither are uasset, keep the first one (i)
+			}
+		}
+	}
 
-    for (int i = 0; i < filtered_count; i++) {
-        if (entries[i].keep) {
-            filtered_argv[new_argc] = entries[i].path;
-            new_argc++;
-        } else {
-            free(entries[i].path);
-        }
-        free(entries[i].basename);
-    }
+	// Filter
+	int new_argc = 1;  // Keep argv[0] (program name)
+	filtered_argv[0] = argv[0];
 
-    free(entries);
-    *argc = new_argc;
-    return filtered_argv;
+	for (int i = 0; i < filtered_count; i++) {
+		if (entries[i].keep) {
+			filtered_argv[new_argc] = entries[i].path;
+			new_argc++;
+		} else {
+			free(entries[i].path);
+		}
+		free(entries[i].basename);
+	}
+
+	free(entries);
+	*argc = new_argc;
+	return filtered_argv;
 
 cleanup_and_exit:
-    // Clean up on error
-    for (int i = 0; i < filtered_count; i++) {
-        free(entries[i].path);
-        free(entries[i].basename);
-    }
-    free(entries);
-    free(filtered_argv);
-    return NULL;
+	// Clean up on error
+	for (int i = 0; i < filtered_count; i++) {
+		free(entries[i].path);
+		free(entries[i].basename);
+	}
+	free(entries);
+	free(filtered_argv);
+	return NULL;
 }
 
 void free_filtered_argv(char** filtered_argv) {
-    if (filtered_argv != NULL) {
-        // Start from 1 to skip argv[0] which points to the original program name
-        for (int i = 1; filtered_argv[i] != NULL; i++) {
-            free(filtered_argv[i]);
-        }
-        free(filtered_argv);
-    }
+	if (filtered_argv != NULL) {
+		// Start from 1 to skip argv[0] which points to the original program name
+		for (int i = 1; filtered_argv[i] != NULL; i++) {
+			free(filtered_argv[i]);
+		}
+		free(filtered_argv);
+	}
 }

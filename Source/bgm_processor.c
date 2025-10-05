@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-extern Config config;
-
 int process_bgm_input(const char* input) {
 	if (is_directory(input)) {
 		return process_bgm_directory(input);
@@ -41,8 +39,8 @@ static int rename_temp_folder(const char* temp_name, const char* mod_name) {
 	char new_path[MAX_PATH];
 
 	// Build the full paths using program directory
-	snprintf(old_path, MAX_PATH, "%s%s", program_directory, temp_name);
-	snprintf(new_path, MAX_PATH, "%s%s", program_directory, mod_name);
+	snprintf(old_path, MAX_PATH, "%s%s", app_data.program_directory, temp_name);
+	snprintf(new_path, MAX_PATH, "%s%s", app_data.program_directory, mod_name);
 
 	if (rename(old_path, new_path) != 0) {
 		printf("Error: Failed to rename %s to %s\n", temp_name, mod_name);
@@ -136,16 +134,16 @@ int process_bgm_directory(const char* dir_path) {
 
 	// Prepare bgm_tool arguments
 	char arguments[20] = "--cmd";
-	if (config.Fixed_Size_BGM) strcat(arguments, " --fixed-size");
+	if (app_data.config.Fixed_Size_BGM) strcat(arguments, " --fixed-size");
 
 	// Execute bgm_tool command
 	if (bgm_index == 0) {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\" \"%s\"\"",
-		         bgm_tool_path, arguments, bgm_files[0].awb_path, bgm_files[1].awb_path,
+		         app_data.bgm_tool_path, arguments, bgm_files[0].awb_path, bgm_files[1].awb_path,
 		         dir_path);
 	} else {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
-		         bgm_tool_path, arguments, bgm_files[bgm_index].awb_path, dir_path);
+		         app_data.bgm_tool_path, arguments, bgm_files[bgm_index].awb_path, dir_path);
 	}
 
 	int result = system(command);
@@ -155,7 +153,7 @@ int process_bgm_directory(const char* dir_path) {
 	}
 
 	// Handle pak generation
-	if (config.Generate_Paks_And_Utocs) {
+	if (app_data.config.Generate_Paks_And_Utocs) {
 		const char* mod_name = get_mod_name();
 		bool any_modified = false;
 
@@ -227,7 +225,7 @@ int process_bgm_awb_file(const char* file_path) {
 
 		char command[MAX_PATH * 8];
 		snprintf(command, sizeof(command), "\"\"%s\" --extract --cmd \"%s\"\"",
-		         bgm_tool_path, file_path); // extract flag
+		         app_data.bgm_tool_path, file_path); // extract flag
 
 		int result = system(command);
 		if (result != 0) {

@@ -86,7 +86,7 @@ int encrypt_hcas(const char* folder, uint64_t hcakey) {
             // Construct command with output redirected to temp file
             snprintf(command, sizeof(command),
                 "\"\"%s\" -i \"%s\" \"%s\" --keycode %" PRIu64 " >%s 2>&1\"",
-                vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
+                app_data.vgaudio_cli_path, input_path, output_path, hcakey, temp_output_path);
 
             // Execute command
             system(command);
@@ -155,7 +155,7 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 
 				// Get total samples and sample rate using vgmstream
 				snprintf(command, sizeof(command), "\"\"%s\" -m \"%s\" > \"%s\"\"",
-				         vgmstream_path, wav_path, temp_file);
+				         app_data.vgmstream_path, wav_path, temp_file);
 				system(command);
 				int samples = 0;
 				int sample_rate = 0;
@@ -187,14 +187,14 @@ int process_wav_files(const char* folder, uint64_t hca_key,
 						        basename, samples);
 						fprintf(batch_file, "\"%s\" \"%s\" \"%s\" --keycode %" PRIu64
 						        " --out-format hca -l 0-%d\n",
-						        vgaudio_cli_path, wav_path, hca_path, hca_key, samples);
+						        app_data.vgaudio_cli_path, wav_path, hca_path, hca_key, samples);
 					}
 				}
 			} else {
 				fprintf(batch_file, "echo Converting %s to HCA\n", basename);
 				fprintf(batch_file, "\"%s\" \"%s\" \"%s\" --keycode %" PRIu64
 				        " --out-format hca\n",
-				        vgaudio_cli_path, wav_path, hca_path, hca_key);
+				        app_data.vgaudio_cli_path, wav_path, hca_path, hca_key);
 			}
 		}
 	}
@@ -259,7 +259,7 @@ int process_hca_files(const char* folder) {
 
 			// Write conversion and deletion logic to batch file
 			fprintf(batch_file, "echo Converting %s.hca to WAV\n", basename);
-			fprintf(batch_file, "\"%s\" -i \"%s\" -o \"%s\"\n", vgmstream_path, hca_path,
+			fprintf(batch_file, "\"%s\" -i \"%s\" -o \"%s\"\n", app_data.vgmstream_path, hca_path,
 			        wav_path);
 
 			// Check if conversion was successful and delete HCA if it was

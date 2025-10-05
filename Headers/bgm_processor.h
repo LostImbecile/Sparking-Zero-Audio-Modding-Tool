@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "utils.h"
-
-extern char bgm_tool_path[MAX_PATH];
+#include "initialization.h"
 
 int process_bgm_input(const char* input);
 int process_bgm_directory(const char* dir_path);
