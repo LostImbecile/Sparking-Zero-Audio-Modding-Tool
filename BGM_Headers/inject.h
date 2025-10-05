@@ -1,7 +1,7 @@
 #ifndef INJECT_H
 #define INJECT_H
 
-#include "hca_tool.h"
+#include "bgm_data.h"
 #include <unistd.h>
 #define BUFFER_SIZE 8192
 

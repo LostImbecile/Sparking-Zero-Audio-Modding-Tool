@@ -27,7 +27,7 @@ int bgm_process_input(const char* input) {
 }
 
 int bgm_process_directory(const char* dir_path) {
-	if (bgm_entry_count == 0) {
+	if (csv_data.bgm_entry_count == 0) {
 		fprintf(stderr, "Error reading BGM dictionary\n");
 		return 1;
 	}

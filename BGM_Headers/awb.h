@@ -1,7 +1,8 @@
 #ifndef AWB_H
 #define AWB_H
 
-#include "hca_tool.h"
+#include "bgm_data.h"
+#include "initialization.h"
 
 int process_awb_file(const char* filename);
 int process_uasset_file(const char* filename);

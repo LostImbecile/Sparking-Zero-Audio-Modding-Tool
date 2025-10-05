@@ -75,20 +75,20 @@ static uint32_t read_le32(FILE* file, long position) {
 
 // Helper function to get the PortNo for a given AWB name
 int get_awb_port(const char* awb_name) {
-	for (int i = 0; i < acb_mapping_count; i++) {
-		if (strcasecmp(acb_mappings[i].awbName,
+	for (int i = 0; i < csv_data.acb_mapping_count; i++) {
+		if (strcasecmp(csv_data.acb_mappings[i].awbName,
 		               extract_name_from_path(awb_name)) == 0) {
-			return acb_mappings[i].portNo;
+			return csv_data.acb_mappings[i].portNo;
 		}
 	}
 	return 0; // Default to 0 if not found
 }
 
 int get_table_size(const char* awb_name) {
-	for (int i = 0; i < acb_mapping_count; i++) {
-		if (strcasecmp(acb_mappings[i].awbName,
+	for (int i = 0; i < csv_data.acb_mapping_count; i++) {
+		if (strcasecmp(csv_data.acb_mappings[i].awbName,
 		               extract_name_from_path(awb_name)) == 0) {
-			return acb_mappings[i].tracks * 4;
+			return csv_data.acb_mappings[i].tracks * 4;
 		}
 	}
 	return -1; // Indicate table size not found (error)

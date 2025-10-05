@@ -1,5 +1,5 @@
 #include "awb.h"
-#include "hca_tool.h"
+#include "bgm_data.h"
 #include "utils.h"
 #include <inttypes.h>
 
@@ -18,16 +18,16 @@ int process_uasset_file(const char* uasset_path) {
 	size_t bytes_read;
 	uint8_t buffer[READ_BUFFER_SIZE];
 
-	// 1. Determine the corresponding AWB path using acb_mappings
+	// 1. Determine the corresponding AWB path using csv_data.acb_mappings
 	char awb_name[MAX_PATH] = {0};
 	int highest_port = -1;
-	for (int i = 0; i < acb_mapping_count; i++) {
+	for (int i = 0; i < csv_data.acb_mapping_count; i++) {
 		if (strcasecmp(extract_name_from_path(uasset_path),
-		               acb_mappings[i].acbName) == 0) {
+		               csv_data.acb_mappings[i].acbName) == 0) {
 			// Find the mapping with the highest port number (last port)
-			if (acb_mappings[i].portNo > highest_port) {
-				highest_port = acb_mappings[i].portNo;
-				strcpy(awb_name, acb_mappings[i].awbName);
+			if (csv_data.acb_mappings[i].portNo > highest_port) {
+				highest_port = csv_data.acb_mappings[i].portNo;
+				strcpy(awb_name, csv_data.acb_mappings[i].awbName);
 			}
 		}
 	}
@@ -234,7 +234,7 @@ int process_awb_file(const char* filename) {
 
 int write_header_csv(const char* filename, HCAHeader* headers, int count) {
 	char header_file[MAX_PATH];
-	snprintf(header_file, sizeof(header_file), "%s%s", program_directory,
+	snprintf(header_file, sizeof(header_file), "%s%s", app_config.program_directory,
 	         extract_name_from_path(filename));
 	FILE* file = fopen(header_file, "wb");
 	if (!file) {
@@ -366,7 +366,7 @@ long read_offset(FILE* file) {
 
 int read_header_csv(const char* filename, HCAHeader** headers, int* count) {
     char header_file[MAX_PATH];
-    snprintf(header_file, sizeof(header_file), "%s%s", program_directory,
+    snprintf(header_file, sizeof(header_file), "%s%s", app_config.program_directory,
              extract_name_from_path(filename));
     FILE* file = fopen(header_file, "rb");
     if (!file) {
