@@ -14,6 +14,9 @@ typedef struct {
     bool Fixed_Size_BGM;
     bool Use_Cue_Names;
     bool Dont_Use_Numbers;
+    bool Disable_Looping;
+    bool Disable_Metadata;
+    bool Use_Cue_IDs;
     char Game_Directory[MAX_PATH];
 } Config;
 

@@ -22,8 +22,13 @@ void pause_for_user(bool is_cmd_mode, const char* message) {
 
     printf("%s", message);
 
-    clear_stdin_buffer(is_cmd_mode);
-    getchar();
+    int c = getchar();
+
+    if (c != '\n' && c != EOF) {
+        while ((c = getchar()) != '\n' && c != EOF) {
+            // keep discarding
+        }
+    }
 }
 
 bool is_directory(const char* path) {

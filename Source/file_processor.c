@@ -5,11 +5,14 @@
 #include "file_extractor.h"
 #include "file_packer.h"
 #include "bgm_processor.h"
+#include "pak_extractor.h"
+#include <dirent.h>
 #include <string.h>
 
 int process_input(const char* input) {
-    const char* ext = get_file_extension(input);
-	if (strcasecmp(ext, "pak") != 0 && (strstr(input, "bgm") != NULL || strstr(input, "BGM") != NULL)  ) {
+	const char* ext = get_file_extension(input);
+	if (strcasecmp(ext, "pak") != 0 && (strstr(input, "bgm") != NULL
+	                                    || strstr(input, "BGM") != NULL)  ) {
 		return process_bgm_input(input);
 	}
 	if (is_directory(input)) {
@@ -37,25 +40,6 @@ int process_input(const char* input) {
 		printf("Unsupported file type: %s\n", ext);
 		return 0;
 	}
-}
-
-int process_pak_file(const char* file_path){
-    char cmd[MAX_PATH * 8];
-    char* base_name = get_basename(file_path);
-
-	// Create unrealpak command
-	snprintf(cmd, sizeof(cmd),
-	         "\"\"%s\" \"%s\" -extract \"%s\\%s\"\"",
-	         app_data.unrealpak_exe_path, file_path, get_parent_directory(file_path), base_name);
-
-    free(base_name);
-	// Execute the command
-	int result = system(cmd);
-	if (result != 0) {
-		printf("Failed to extract PAK.\n");
-		return 1;
-	}
-	return 0;
 }
 
 int process_directory(const char* dir_path) {

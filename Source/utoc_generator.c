@@ -116,46 +116,46 @@ static int check_existing_files(const char* game_dir, const char* mod_name) {
 
 	// Ask user to delete or keep
 	if (files_exist) {
-		char response;
 		printf("Existing mod files found. Delete them? (y/n): ");
-		scanf(" %c", &response);
+		char response[10];
+		if (fgets(response, sizeof(response), stdin)) {
+			if (response[0] == 'y' || response[0] == 'Y') {
+				dir = opendir(mods_path);
+				if (dir != NULL) {
+					while ((entry = readdir(dir)) != NULL) {
+						char* dot_pos = strrchr(entry->d_name, '.');
+						if (!dot_pos) continue;
 
-		if (tolower(response) == 'y') {
-			dir = opendir(mods_path);
-			if (dir != NULL) {
-				while ((entry = readdir(dir)) != NULL) {
-					char* dot_pos = strrchr(entry->d_name, '.');
-					if (!dot_pos) continue;
+						size_t name_len = dot_pos - entry->d_name;
+						char filename[MAX_PATH];
+						strncpy(filename, entry->d_name, name_len);
+						filename[name_len] = '\0';
 
-					size_t name_len = dot_pos - entry->d_name;
-					char filename[MAX_PATH];
-					strncpy(filename, entry->d_name, name_len);
-					filename[name_len] = '\0';
+						size_t file_len = strlen(filename);
+						if (file_len > 2 && strcasecmp(filename + file_len - 2, "_p") == 0) {
+							filename[file_len - 2] = '\0';
+						}
 
-					size_t file_len = strlen(filename);
-					if (file_len > 2 && strcasecmp(filename + file_len - 2, "_p") == 0) {
-						filename[file_len - 2] = '\0';
-					}
-
-					if (strcasecmp(filename, mod_name_clean) == 0) {
-						for (int i = 0; i < 3; i++) {
-							if (strcasecmp(dot_pos, extensions[i]) == 0) {
-								snprintf(file_path, MAX_PATH, "%s/~mods/%s", game_dir, entry->d_name);
-								if (remove(file_path) != 0) {
-									printf("Warning: Failed to delete %s\n", file_path);
+						if (strcasecmp(filename, mod_name_clean) == 0) {
+							for (int i = 0; i < 3; i++) {
+								if (strcasecmp(dot_pos, extensions[i]) == 0) {
+									snprintf(file_path, MAX_PATH, "%s/~mods/%s", game_dir, entry->d_name);
+									if (remove(file_path) != 0) {
+										printf("Warning: Failed to delete %s\n", file_path);
+									}
+									break;
 								}
-								break;
 							}
 						}
 					}
+					closedir(dir);
+					printf("\n");
 				}
-				closedir(dir);
-				printf("\n");
+			} else {
+				printf("Operation cancelled by user.\n");
+				clear_stdin_buffer(app_data.is_cmd_mode);
+				return 1;
 			}
-		} else {
-			printf("Operation cancelled by user.\n");
-			clear_stdin_buffer(app_data.is_cmd_mode);
-			return 1;
 		}
 	}
 

@@ -139,7 +139,8 @@ int process_bgm_directory(const char* dir_path) {
 	// Execute bgm_tool command
 	if (bgm_index == 0) {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\" \"%s\"\"",
-		         app_data.bgm_tool_path, arguments, bgm_files[0].awb_path, bgm_files[1].awb_path,
+		         app_data.bgm_tool_path, arguments, bgm_files[0].awb_path,
+		         bgm_files[1].awb_path,
 		         dir_path);
 	} else {
 		snprintf(command, sizeof(command), "\"\"%s\" %s \"%s\" \"%s\"\"",
@@ -166,7 +167,8 @@ int process_bgm_directory(const char* dir_path) {
 					if (get_last_mod_time(bgm_files[i].awb_path, &current_mod_time) == 0) {
 						if (current_mod_time != bgm_files[i].initial_mod_time_awb) {
 							any_modified = true;
-							printf("Note: %s was modified and will be packed.\n", extract_name_from_path(bgm_files[i].awb_path));
+							printf("Note: %s was modified and will be packed.\n",
+							       extract_name_from_path(bgm_files[i].awb_path));
 						}
 					}
 				}
@@ -211,54 +213,48 @@ int process_bgm_directory(const char* dir_path) {
 }
 
 int process_bgm_awb_file(const char* file_path) {
-	char answer;
 
-	printf("Do you want to extract and convert %s to WAV? (y/n): ",
+	printf("Extracting %s and converting files to WAV...\n",
 	       extract_name_from_path(file_path));
-	scanf(" %c", &answer);
+	char folder_path[MAX_PATH];
+	strcpy(folder_path, get_parent_directory(file_path));
+	strcat(folder_path, "\\");
+	strcat(folder_path, get_basename(file_path)); // Build the folder path
 
-	if (answer == 'y' || answer == 'Y') {
-		char folder_path[MAX_PATH];
-		strcpy(folder_path, get_parent_directory(file_path));
-		strcat(folder_path, "\\");
-		strcat(folder_path, get_basename(file_path)); // Build the folder path
+	// extract to get the HCAs, started in the relevant directory
+	char command[MAX_PATH * 8];
+	snprintf(command, sizeof(command),
+	         "cd /d \"%s\" && \"%s\" --extract --cmd \"%s\"",
+	         get_parent_directory(file_path), app_data.bgm_tool_path, file_path);
 
-		char command[MAX_PATH * 8];
-		snprintf(command, sizeof(command), "\"\"%s\" --extract --cmd \"%s\"\"",
-		         app_data.bgm_tool_path, file_path); // extract flag
-
-		int result = system(command);
-		if (result != 0) {
-			printf("Error: BGM tool failed with return code %d\n", result);
-			return 1;
-		}
+	int result = system(command);
+	if (result != 0) {
+		printf("Error: BGM tool failed with return code %d\n", result);
+		return 1;
+	}
 
 
-		// Generate HCA key using the uasset in the created folder
-		char uasset_path[MAX_PATH];
-		if (strstr(file_path, "bgm_main") != NULL)
-			snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset",
-			         get_parent_directory(file_path)); // Corrected path
-		else {
-			snprintf(uasset_path, MAX_PATH, "%s\\%s",
-			         get_parent_directory(file_path),
-			         replace_extension(extract_name_from_path(file_path), "uasset"));
-		}
-		generate_hcakey_dir(uasset_path, folder_path);
-		process_uasset(uasset_path);
-
+	// Generate HCA key using the uasset in the created folder
+	char uasset_path[MAX_PATH];
+	if (strstr(file_path, "bgm_main") != NULL)
+		snprintf(uasset_path, MAX_PATH, "%s\\bgm_main.uasset",
+		         get_parent_directory(file_path)); // Corrected path
+	else {
+		snprintf(uasset_path, MAX_PATH, "%s\\%s",
+		         get_parent_directory(file_path),
+		         replace_extension(extract_name_from_path(file_path), "uasset"));
+	}
+	generate_hcakey_dir(uasset_path, folder_path);
+	if (process_uasset(uasset_path)) {
 		generate_txtm(file_path);
 		add_metadata(file_path);
-
-		// Process HCA files in the folder
-		if (process_hca_files(folder_path) != 0) {
-			printf("Error extracting HCAs\n");
-			return 1;
-		}
-
-		return 0;
-
 	}
+	// Process HCA files in the folder
+	if (process_hca_files(folder_path) != 0) {
+		printf("Error extracting HCAs\n");
+		return 1;
+	}
+
 	return 0;
 }
 
