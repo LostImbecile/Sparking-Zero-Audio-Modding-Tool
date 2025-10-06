@@ -26,7 +26,16 @@
 "# Format: \"Cue_N - CueName1;CueName2;etc...\" Where N is the number of the file, needed for repackaging\n" \
 "# You can name your file 'Cue_N' and it'll still replace it correctly, no need to type the entire name\n" \
 "Use_Cue_Names=false\n" \
-"Dont_Use_Numbers=true\n\n"
+"Dont_Use_Numbers=true\n\n" \
+"# When Use_Cue_Names is also enabled, both will be included in the filename\n" \
+"# Useful since unreal engine sometimes uses the cue id and not the name\n" \
+"Use_Cue_IDs=false\n\n" \
+"# If true, loop points will not be automatically set for converted BGM WAVs\n" \
+"Disable_Looping=false\n\n" \
+"# If disabled, metadata processing (including Cue Names and Cue IDs) is skipped\n" \
+"# This means files won't have the title, author, track number and other metadata\n" \
+"# This can significantly speed up operations on files with thousands of tracks\n" \
+"Disable_Metadata=false\n\n" \
 
 // Initialize config with default values
 void config_init(Config* config) {
@@ -36,6 +45,9 @@ void config_init(Config* config) {
 	config->Fixed_Size_BGM = false;
 	config->Use_Cue_Names = false;
 	config->Dont_Use_Numbers = true;
+	config->Disable_Looping = false;
+	config->Disable_Metadata = false;
+	config->Use_Cue_IDs = false;
 	strcpy(config->Game_Directory,
 	       "C:\\Program Files (x86)\\Steam\\steamapps\\common\\DRAGON BALL Sparking! ZERO\\SparkingZERO\\Content\\Paks");
 }
@@ -86,6 +98,12 @@ static void parse_line(Config* config, char* line) {
 		config->Use_Cue_Names = (strcasecmp(value, "true") == 0);
 	} else if (strcmp(key_lower, "dont_use_numbers") == 0) {
 		config->Dont_Use_Numbers = (strcasecmp(value, "true") == 0);
+	} else if (strcmp(key_lower, "disable_looping") == 0) {
+		config->Disable_Looping = (strcasecmp(value, "true") == 0);
+	} else if (strcmp(key_lower, "disable_metadata") == 0) {
+		config->Disable_Metadata = (strcasecmp(value, "true") == 0);
+	} else if (strcmp(key_lower, "use_cue_ids") == 0) {
+		config->Use_Cue_IDs = (strcasecmp(value, "true") == 0);
 	}
 }
 
@@ -109,7 +127,20 @@ bool config_load(Config * config, const char* filename) {
 		parse_line(config, line);
 	}
 	fclose(file);
+
+	// Apply logical constraints for consistency
+	config_apply_logic(config);
+
 	return true;
+}
+
+// This ensures that if a primary option is disabled
+// any dependent secondary options are also disabled
+void config_apply_logic(Config* config) {
+	if (config->Disable_Metadata) {
+		config->Use_Cue_Names = false;
+		config->Use_Cue_IDs = false;
+	}
 }
 
 // Helper function for quoted paths

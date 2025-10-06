@@ -122,7 +122,7 @@ int process_bgm_directory(const char* dir_path) {
 	}
 
 	// Process WAVs and encrypt HCAs
-	if (process_wav_files(dir_path, hca_key_to_use, 1) != 0) {
+	if (process_wav_files(dir_path, hca_key_to_use, !app_data.config.Disable_Looping) != 0) {
 		printf("Error during WAV to HCA conversion\n");
 		return -1;
 	}
@@ -245,7 +245,7 @@ int process_bgm_awb_file(const char* file_path) {
 		         replace_extension(extract_name_from_path(file_path), "uasset"));
 	}
 	generate_hcakey_dir(uasset_path, folder_path);
-	if (process_uasset(uasset_path)) {
+	if (!app_data.config.Disable_Metadata && process_uasset(uasset_path)) {
 		generate_txtm(file_path);
 		add_metadata(file_path);
 	}

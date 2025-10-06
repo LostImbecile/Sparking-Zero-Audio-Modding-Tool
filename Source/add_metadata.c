@@ -216,32 +216,44 @@ int add_metadata(const char* input_file) {
 
 				const char* genre = get_genre(awb_path);
 
-				// Write the command to the batch file
 				fprintf(metadata_batch_file,
 				        "\"%s\" \"%s\" \"Cue: %s\" \"%s\" \"CueID: %s\" \"%s\" \"%d\"\n",
 				        app_data.metadata_tool_path, wav_file_path, // Now with .wav extension
 				        streamData.records[fileindex].stream_name, extract_name_from_path(awb_path),
 				        streamData.records[fileindex].cue_id, genre, fileindex + 1);
 
-				// Add rename command if Use_Cue_Names is enabled
-				if (app_data.config.Use_Cue_Names) {
+				// Add rename command if Use_Cue_Names or Use_Cue_IDs is enabled
+				if (app_data.config.Use_Cue_Names || app_data.config.Use_Cue_IDs) {
 					const char* cue_name = streamData.records[fileindex].stream_name;
-					if (!cue_name || strlen(cue_name) == 0) {
-						cue_name = "null";
+					const char* cue_id = streamData.records[fileindex].cue_id;
+
+					if (!cue_name || strlen(cue_name) == 0) cue_name = "null";
+					if (!cue_id || strlen(cue_id) == 0) cue_id = "null";
+
+					char name_part_buffer[MAX_PATH] = {0};
+
+					// Build the filename part based on config
+					if (app_data.config.Use_Cue_Names && app_data.config.Use_Cue_IDs) {
+						snprintf(name_part_buffer, sizeof(name_part_buffer), "CueID=%s, CueName=%s", cue_id, cue_name);
+					} else if (app_data.config.Use_Cue_IDs) {
+						snprintf(name_part_buffer, sizeof(name_part_buffer), "CueID=%s", cue_id);
+					} else { // This case is only for Use_Cue_Names
+						snprintf(name_part_buffer, sizeof(name_part_buffer), "%s", cue_name);
 					}
+
 					char sanitized_name[MAX_PATH] = {0};
-					sanitize_filename(cue_name, sanitized_name);
+					sanitize_filename(name_part_buffer, sanitized_name);
 
 					// Add to mapping if using numbers-free mode
 					if (app_data.config.Dont_Use_Numbers) {
 						add_file_mapping(mapping, original_num, sanitized_name);
 					}
 
-					// Generate new name using helper function
+					// Generate new name
 					const char* new_name = generate_file_name(sanitized_name, original_num,
 					                       ".wav", mapping, app_data.config.Dont_Use_Numbers);
 
-					// Write rename command to batch file
+					// Write rename command
 					fprintf(metadata_batch_file, "ren \"%s\" \"%s\"\n", wav_file_path, new_name);
 				}
 			}
@@ -354,24 +366,36 @@ int rename_hcas(const char* input_file) {
 				if (endptr == filename || fileindex >= streamData.num_records) {
 					continue;
 				}
-
 				const char* cue_name = streamData.records[fileindex].stream_name;
-				if (!cue_name || strlen(cue_name) == 0) {
-					cue_name = "null";
+				const char* cue_id = streamData.records[fileindex].cue_id;
+
+				if (!cue_name || strlen(cue_name) == 0) cue_name = "null";
+				if (!cue_id || strlen(cue_id) == 0) cue_id = "null";
+
+				char name_part_buffer[MAX_PATH] = {0};
+
+				// Build the filename part based on config
+				if (app_data.config.Use_Cue_Names && app_data.config.Use_Cue_IDs) {
+					snprintf(name_part_buffer, sizeof(name_part_buffer), "CueID=%s, CueName=%s", cue_id, cue_name);
+				} else if (app_data.config.Use_Cue_IDs) {
+					snprintf(name_part_buffer, sizeof(name_part_buffer), "CueID=%s", cue_id);
+				} else { // This case is only for Use_Cue_Names
+					snprintf(name_part_buffer, sizeof(name_part_buffer), "%s", cue_name);
 				}
+
 				char sanitized_name[MAX_PATH] = {0};
-				sanitize_filename(cue_name, sanitized_name);
+				sanitize_filename(name_part_buffer, sanitized_name);
 
 				// Add to mapping if using numbers-free mode
 				if (app_data.config.Dont_Use_Numbers) {
 					add_file_mapping(mapping, original_num, sanitized_name);
 				}
 
-				// Generate new name using helper function
+				// Generate new name
 				const char* new_name = generate_file_name(sanitized_name, original_num,
 				                       ".hca", mapping, app_data.config.Dont_Use_Numbers);
 
-				// Write rename command to batch file
+				// Write rename command
 				fprintf(batch_file, "ren \"%s\\%s\" \"%s\"\n",
 				        folder_path, filename, new_name);
 			}

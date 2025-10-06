@@ -40,7 +40,8 @@ int run_acb_editor(const char* filepath) {
 	char command[MAX_PATH * 8];
 
 	// Construct the command with proper quoting
-	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"", app_data.acb_editor_path,
+	snprintf(command, sizeof(command), "\"\"%s\" \"%s\"\"",
+	         app_data.acb_editor_path,
 	         filepath);
 
 	// Execute the command
@@ -66,57 +67,58 @@ int extract_and_process(const char* input_file) {
 	if (run_acb_editor(acb_path) != 0) {
 		return 1;
 	}
-    // Get folder path
-    char folder_path[MAX_PATH];
-    strcpy(folder_path, get_parent_directory(input_file));
-    strcat(folder_path, "\\");
-    strcat(folder_path, get_basename(input_file));
+	// Get folder path
+	char folder_path[MAX_PATH];
+	strcpy(folder_path, get_parent_directory(input_file));
+	strcat(folder_path, "\\");
+	strcat(folder_path, get_basename(input_file));
 
-    if (app_data.config.Convert_HCA_Into_WAV) {
-        // For files that need it
-        generate_txtm(input_file);
+	if (app_data.config.Convert_HCA_Into_WAV) {
+		// For files that need it
+		generate_txtm(input_file);
 
-        // Write metadata batch file
-        if (add_metadata(input_file) != 0) {
-            fprintf(stderr, "Error adding metadata.\n");
-            // Not a big deal if it fails
-        }
+		// Write metadata batch file
+		// Not a big deal if it fails
+		if (!app_data.config.Disable_Metadata && add_metadata(input_file) != 0)
+			fprintf(stderr, "Error adding metadata.\n");
 
-        printf("Converting HCAs into WAV in different CMD.\n");
-        printf("Remember: you can turn this off in app_data.config.ini any time!\n");
+		printf("Converting HCAs into WAV in different CMD.\n");
+		printf("Remember: you can turn this off in app_data.config.ini any time!\n");
 
-        if (process_hca_files(folder_path) != 0) {
-            printf("Error extracting HCAs from %s\n", extract_name_from_path(get_basename(input_file)));
-        }
-    } else if (app_data.config.Use_Cue_Names) {
-        // For files that need it
-        generate_txtm(input_file);
+		if (process_hca_files(folder_path) != 0) {
+			printf("Error extracting HCAs from %s\n",
+			       extract_name_from_path(get_basename(input_file)));
+		}
+	} else if (app_data.config.Use_Cue_Names || app_data.config.Use_Cue_IDs) {
+		// For files that need it
+		generate_txtm(input_file);
 
-        // If HCA conversion is disabled but Use_Cue_Names is enabled, rename HCAs
-        if (rename_hcas(input_file) != 0) {
-            fprintf(stderr, "Error generating HCA rename batch file.\n");
-            return 1;
-        }
+		// If HCA conversion is disabled but Use_Cue_Names is enabled, rename HCAs
+		if (rename_hcas(input_file) != 0) {
+			fprintf(stderr, "Error generating HCA rename batch file.\n");
+			return 1;
+		}
 
-        // Run the rename_hcas.bat file in a new command window
-        char rename_batch_path[MAX_PATH];
-        snprintf(rename_batch_path, sizeof(rename_batch_path), "%s\\rename_hcas.bat", folder_path);
+		// Run the rename_hcas.bat file in a new command window
+		char rename_batch_path[MAX_PATH];
+		snprintf(rename_batch_path, sizeof(rename_batch_path), "%s\\rename_hcas.bat",
+		         folder_path);
 
-        // Build the command to execute the batch file in a new window
-        char command[MAX_PATH + 100];
-        snprintf(command, sizeof(command),
-                 "start \"HCA Renaming\" /wait cmd /C \"chcp 65001 >nul && \"%s\"\"",
-                 rename_batch_path);
+		// Build the command to execute the batch file in a new window
+		char command[MAX_PATH + 100];
+		snprintf(command, sizeof(command),
+		         "start \"HCA Renaming\" /wait cmd /C \"chcp 65001 >nul && \"%s\"\"",
+		         rename_batch_path);
 
-        // Execute the command
-        int result = system(command);
-        if (result != 0) {
-            fprintf(stderr, "Error running rename_hcas.bat.\n");
-            return 1;
-        }
+		// Execute the command
+		int result = system(command);
+		if (result != 0) {
+			fprintf(stderr, "Error running rename_hcas.bat.\n");
+			return 1;
+		}
 
-        printf("Renaming HCAs based on Cue Names in a separate CMD window.\n");
-    }
+		printf("Renaming HCAs based on Cue Names in a separate CMD window.\n");
+	}
 
 	return 0;
 }

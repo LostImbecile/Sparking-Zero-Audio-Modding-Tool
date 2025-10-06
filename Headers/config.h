@@ -23,5 +23,6 @@ typedef struct {
 void config_init(Config* config);
 bool config_load(Config* config, const char* filename);
 const char* config_get_quoted_path(const char* path, char* buffer, size_t buffer_size);
+void config_apply_logic(Config* config);
 
 #endif // CONFIG_H

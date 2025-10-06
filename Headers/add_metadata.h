@@ -15,8 +15,9 @@
  */
 int add_metadata(const char* input_file);
 
-char* generate_file_name(const char* sanitized_name, int original_num, const char* extension,
-                        FileMappingList* mapping, int config_dont_use_numbers);
+char* generate_file_name(const char* sanitized_name, int original_num,
+                         const char* extension,
+                         FileMappingList* mapping, int config_dont_use_numbers);
 
 void rename_files_back(const char* foldername);
 int rename_hcas(const char* input_file);
