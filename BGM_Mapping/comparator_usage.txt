@@ -1,0 +1,26 @@
+You will need:
+- the .txtm file here
+- the new bgm_main.awb, bgm_main_Cnk_00.awb, and bgm_main.acb
+- foobar with the vgmstream plugin, or vgmstream-cli if you know the command
+- python, you may need to 'pip install pandas'
+- the old bgm_dictionary.csv
+
+You merely need to get the new cue indices with foobar by dropping the awb into it, when the .acb and .txtm files are in the same folder, this will show you all the tracks inside, which you can copy and paste into a text file. 
+
+Make sure the names in the python script and your files match, you can just edit the python file if you want.
+
+Once you have said cues and the dictionary, run:
+'py dictionary_compare.py'
+
+
+Your cue files should ideally be in this format when copied, if there are more columns, remove them from foobar:
+bgm_main#1 (BGM_DUCKING_1s [pre]; BGM_DUCKING_2s [pre]; BGM_DUCKING_3s [pre]; BGM_DUCKING_4s [pre]; BGM_DUCKING_5s [pre]; BGM_FADE_IN_1s [pre]; BGM_FADE_IN_2s [pre]; BGM_FADE_IN_3s [pre]; BGM_FADE_IN_4s [pre])
+bgm_main#2 (BGM_FADE_IN_5s [pre]; BGM_Vol_0 [pre]; BGM_Vol_100 [pre]; BGM_Vol_33 [pre]; BGM_Vol_50 [pre]; BGM_Vol_67 [pre]; BGM_Vol_80 [pre])
+bgm_main#3 (BGM_STAFF_ROLL [pre]; M_0001 [pre])
+bgm_main#4 (M_0003 [pre])
+bgm_main#5 (M_0003_TUTOEND [pre])
+bgm_main#6 (M_0005 [pre])
+....
+...
+..
+.
