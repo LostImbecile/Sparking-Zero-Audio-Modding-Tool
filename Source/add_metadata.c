@@ -128,14 +128,34 @@ int add_metadata(const char* input_file) {
 
 	int is_bgm = 0;
 	int deduct = 0;
-	if (strstr(input_file, "bgm_") != NULL) {
+	if (strstr(input_file, "bgm") != NULL) {
 		is_bgm = 1;
-		if (strstr(input_file, "Cnk_00"))
-			deduct = 82;
-		else if (strstr(input_file, "DLC_01"))
-			deduct = 82 + 38;
-		else if (strstr(input_file, "DLC_02"))
-			deduct = 82 + 38 + 13;
+
+		char* inputFileBasename = get_basename(input_file);
+		if (!inputFileBasename) {
+			fprintf(stderr, "Error: Failed to get basename for input file.\n");
+			return 1;
+		}
+
+		int starting_index = 0;
+		for (int i = 0; i < app_data.acb_mapping_data.mapping_count; i++) {
+			char* csvAwbBasename = get_basename(app_data.acb_mapping_data.mappings[i].awbName);
+			if (!csvAwbBasename) {
+				fprintf(stderr, "Error: Failed to get basename for CSV entry.\n");
+				continue;
+			}
+
+			if (strcmp(inputFileBasename, csvAwbBasename) == 0) {
+				deduct = starting_index;
+				free(csvAwbBasename);
+				break;
+			}
+			starting_index += app_data.acb_mapping_data.mappings[i].tracks;
+
+			free(csvAwbBasename);
+		}
+
+		free(inputFileBasename);
 	}
 
 	// Get folder path

@@ -72,6 +72,12 @@ int initialise_program(const char* program_path) {
 		return 1;
 	}
 
+	char mapping_path[MAX_PATH];
+	get_program_file_path("Tools\\acb_mapping.csv", mapping_path, sizeof(mapping_path));
+	if (!read_acb_mapping(mapping_path, &app_data.acb_mapping_data)) {
+		fprintf(stderr, "Warning: Could not read acb_mapping.csv. Metadata may be incorrect.\n");
+	}
+
 	// Load config file
 	char config_path[MAX_PATH];
 	get_program_file_path("config.ini", config_path, sizeof(config_path));

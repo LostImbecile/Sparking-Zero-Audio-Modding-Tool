@@ -4,10 +4,12 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "acb_mapping.h"
 #include "config.h" // defines the Config struct and MAX_PATH
 
 // all global variables
 typedef struct {
+    AcbMappingData acb_mapping_data;
 	char program_directory[MAX_PATH];
 	char vgaudio_cli_path[MAX_PATH];
 	char acb_editor_path[MAX_PATH];

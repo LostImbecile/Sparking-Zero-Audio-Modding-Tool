@@ -245,7 +245,8 @@ int process_bgm_awb_file(const char* file_path) {
 		         replace_extension(extract_name_from_path(file_path), "uasset"));
 	}
 	generate_hcakey_dir(uasset_path, folder_path);
-	if (!app_data.config.Disable_Metadata && process_uasset(uasset_path)) {
+
+	if (!app_data.config.Disable_Metadata && process_uasset(uasset_path) == 0) {
 		generate_txtm(file_path);
 		add_metadata(file_path);
 	}
