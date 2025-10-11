@@ -73,7 +73,7 @@ int initialise_program(const char* program_path) {
 	}
 
 	char mapping_path[MAX_PATH];
-	get_program_file_path("Tools\\acb_mapping.csv", mapping_path, sizeof(mapping_path));
+	get_program_file_path("Tools\\Mapping\\acb_mapping.csv", mapping_path, sizeof(mapping_path));
 	if (!read_acb_mapping(mapping_path, &app_data.acb_mapping_data)) {
 		fprintf(stderr, "Warning: Could not read acb_mapping.csv. Metadata may be incorrect.\n");
 	}

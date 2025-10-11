@@ -21,19 +21,19 @@ int initialize_program(const char* program_path) {
     }
 
     // Load data from CSV files
-    if (!read_bgm_dictionary("bgm_dictionary.csv")) {
+    if (!read_bgm_dictionary("Mapping\\bgm_dictionary.csv")) {
         fprintf(stderr, "Error loading BGM dictionary.\n");
         return 1;
     }
-    if (!read_acb_mapping("acb_mapping.csv")) {
+    if (!read_acb_mapping("Mapping\\acb_mapping.csv")) {
         fprintf(stderr, "Error loading ACB mappings.\n");
         return 1;
     }
-    if (!read_hca_pairs("hca_pairs.csv")) {
+    if (!read_hca_pairs("Mapping\\hca_pairs.csv")) {
         fprintf(stderr, "Error loading HCA Pairs.\n");
         return 1;
     }
-    if (!read_banned_indices("protected_indices.csv")) {
+    if (!read_banned_indices("Mapping\\protected_indices.csv")) {
         fprintf(stderr, "Error loading Banned Indices.\n");
         return 1;
     }
