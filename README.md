@@ -48,6 +48,7 @@ I didn't write docs or comments for everything, sorry about that, for other game
 - Mapping files
 - Hcakey generation (This game combines a shared key with one present in the .awb)
 - Batch files or commands to do with UnrealRezen and Unrealpak
+- Header replacement logic for ACBs if needed
 
 See this [Manual Guide](https://docs.google.com/document/d/1hjCoHq5XxsIRARTcqUn12roO_SVsuiYhDwmwWXCrDQ0/edit?tab=t.y5zlgcmfyfcs) for general BGM/File replacement, it's the process the BgmModdingTool implements, noting that the fixed sized version should work for most games using CriWare. The main tool is Sparking Zero specific, the other is not and may be re-used after you edit the HCA Signature used to find the HCAs themselves.
 
@@ -66,7 +67,8 @@ For info on the formats or general knowledge see the contact details above and j
        - Any amount of .awb files -> extracts their headers
        - Any amount of folders -> injects them in the relevant .awb and .uasset files
        - "--extract" .awb files -> extracts the .awb file content into HCA
-       - "--cmd" * -> doesn't ask the user to press enter to exit  
+       - "--cmd" * -> doesn't ask the user to press enter to exit
+       - "--fixed-size" folders -> maintains awb size and doesn't touch offsets
 - `sub` **AddWavMetadata**: My rough implementation of metadata addition to WAVs
    - **args:**
       - file.wav "Title" "Album" "Artist" "Genre" "Track Number" `[All Mandatory]`     
