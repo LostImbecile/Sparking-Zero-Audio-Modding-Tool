@@ -29,6 +29,19 @@ int get_file_index_start(const char* awb_name) {
     return index_start;
 }
 
+int get_port1_track_count(const char* uasset_name) {
+    for (int i = 0; i < csv_data.acb_mapping_count; i++) {
+        // Check if the current mapping's acbName matches the provided uasset_name
+        // and if the port number is 1
+        if (strcasecmp(csv_data.acb_mappings[i].acbName, uasset_name) == 0 &&
+            csv_data.acb_mappings[i].portNo == 1) {
+            return csv_data.acb_mappings[i].tracks;
+        }
+    }
+
+    return 0;
+}
+
 void trim(char* str) {
     if (str == NULL) return;
     char* start = str;

@@ -74,6 +74,7 @@ extern CsvData csv_data;
 
 // Function prototypes
 int get_file_index_start(const char* awb_name);
+int get_port1_track_count(const char* uasset_name);
 bool read_bgm_dictionary(const char* filename);
 bool read_acb_mapping(const char* filename);
 bool read_hca_pairs(const char* filename);

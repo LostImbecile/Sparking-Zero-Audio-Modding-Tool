@@ -270,7 +270,7 @@ bool inject_hca(const char* container_path, InjectionInfo* injections,
 		         target_dir, get_basename(injections[i].target_file));
 
 		// Why read and write each time? I don't want to implement a cache and there
-		// multiple AWBs for the same container
+		// are multiple AWBs for the same container
 		if (read_header_csv(header_csv, &target_headers, &target_header_count) != 0) {
 			fclose(container);
 			free(uasset_headers);

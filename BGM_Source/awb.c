@@ -18,7 +18,7 @@ int process_uasset_file(const char* uasset_path) {
 	size_t bytes_read;
 	uint8_t buffer[READ_BUFFER_SIZE];
 
-	// 1. Determine the corresponding AWB path using csv_data.acb_mappings
+	// 1. Determine the corresponding AWB path
 	char awb_name[MAX_PATH] = {0};
 	int highest_port = -1;
 	for (int i = 0; i < csv_data.acb_mapping_count; i++) {
@@ -34,6 +34,8 @@ int process_uasset_file(const char* uasset_path) {
 
 	// 2. Get the starting index for the last port of this ACB
 	int add_to_index = get_file_index_start(awb_name);
+	int port1_tracks = get_port1_track_count(extract_name_from_path(uasset_path));
+
 	while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
 		for (size_t i = 0; i <= bytes_read - sizeof(hca_signature); ++i) {
 			if (memcmp(buffer + i, hca_signature, sizeof(hca_signature)) == 0) {
@@ -44,9 +46,9 @@ int process_uasset_file(const char* uasset_path) {
 					return 1;
 				}
 
-				// Use the calculated starting index or -38
-				if (header_count > 37) {
-					headers[header_count].index = header_count - 38;
+				// Use the calculated starting index or deduct
+				if (header_count >= port1_tracks) {
+					headers[header_count].index = header_count - port1_tracks;
 				} else {
 					headers[header_count].index = header_count + add_to_index;
 				}

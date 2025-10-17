@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-#define MAX_PATH 256
+#define MAX_PATH 1000
 
 const char* extract_name_from_path(const char* path);
 int create_directory_recursive(const char* path);

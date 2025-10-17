@@ -83,7 +83,7 @@ int extract_and_process(const char* input_file) {
 			fprintf(stderr, "Error adding metadata.\n");
 
 		printf("Converting HCAs into WAV in different CMD.\n");
-		printf("Remember: you can turn this off in app_data.config.ini any time!\n");
+		printf("Remember: you can turn this off in config.ini any time!\n");
 
 		if (process_hca_files(folder_path) != 0) {
 			printf("Error extracting HCAs from %s\n",
